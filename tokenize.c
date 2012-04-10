@@ -21,7 +21,7 @@ enum token_type number(const char *string, int first);	//number関数は読み�
 enum token_type one_symbol(const char *string, int index);	//one_symbol関数はOPEN,CLOSE,OPERATOR専用で文字をone_symbol_dataへ格納する。
 char *sym_data = NULL;	//実際の文字列のデータ
 int num_data = 0;		//実際の数字のデータ
-char one_symbol_data = 0;
+char  one_symbol_data= 0;
 int i = 0, j = 0;	//ループ用変数
 int jindex = 0;	//入力された文字数
 enum token_type tt;		//タイプ格納
@@ -32,8 +32,21 @@ void tokenize(const char *input) {	//void型はreturn不要
 	int tmp = 0;		//文字の初めのjindex
 	int char_token = 0;	//文字数
 	for(jindex = 0; jindex < inputSize; jindex++){
+//	do{
 		if(input[jindex] != ' '){
-//Recognition round bracket
+//Recognition round bracket, Operator
+/*			switch(input[jindex]){
+				case '(':
+				case ')':
+				case '+':
+				case '*':
+				case '-':
+				case '/':
+					tt = one_symbol(input, jindex);
+					printf("one_symbol_data '%C', tt = %d\n",one_symbol_data,tt);
+					break;
+				default:
+					*/		
 			if(input[jindex] == '('){
 				tt = one_symbol(input, jindex);	//ttの値で条件分けする。ttの値がOPENなら他の関数を呼んで、CLOSEなら文字の読み込み、データに格納を終了する。SYMBOLならその時のinput[op]の値により演算子の区別ができる。
 				printf("one_symbol_data'%c', tt = %d\n",one_symbol_data,tt);
@@ -42,38 +55,41 @@ void tokenize(const char *input) {	//void型はreturn不要
 				tt = one_symbol(input, jindex);
 				printf("one_symbol_data'%c', tt = %d\n",one_symbol_data,tt);
 			}
-//Recognition Operator
 			if(input[jindex] == '*'){
 				tt = one_symbol(input, jindex);
 				printf("one_symbol_data'%c', tt = %d\n",one_symbol_data,tt);
 			}else if(input[jindex] == '+'){
-				one_symbol(input, jindex);
+				tt = one_symbol(input, jindex);
 				printf("one_symbol_data'%c', tt = %d\n",one_symbol_data,tt);
 			}else if(input[jindex] == '-'){
-				one_symbol(input, jindex);
+				tt = one_symbol(input, jindex);
 				printf("one_symbol_data'%c', tt = %d\n",one_symbol_data,tt);
 			}else if(input[jindex] == '/'){
-				one_symbol(input, jindex);
+				tt = one_symbol(input, jindex);
 				printf("one_symbol_data'%c', tt = %d\n",one_symbol_data,tt);
 			}
+
 //Recognition Number 関数numberを呼び出す。
 			if(47 < input[jindex] && input[jindex] < 58){
-				tt = number(input, jindex);
+					tt = number(input, jindex);
 printf("log_number num_data = %d, tt = %d\n",num_data,tt);
 				continue;
+//				break;
 			}
 //Recognition Charactor 関数symbolを呼び出す。
 			if(64 < input[jindex] && input[jindex] < 91 || 96 < input[jindex] && input[jindex] < 123){
 				tt = symbol(input, jindex);
-printf("log_symbol tt = %d, sym_data = %s\n", tt, sym_data);
-//				free(sym_data);
+printf("log_symbol sym_data = %s, tt = %d\n",sym_data,tt);
+				free(sym_data);
 				continue;
+//				break;
 			}
+		
 		}else if(input[jindex] == ' '){
-				printf("");
+			printf("");
+//			jindex++;
 		}
-	}
-
+	}//while(jindex != inputSize);
 }
 
 enum token_type symbol(const char *string, int last){
@@ -95,45 +111,48 @@ enum token_type symbol(const char *string, int last){
 	}
 //	buf[j] = '\0';								//文字列の最後は\0です。
 	sym_data[j] = '\0';
-	printf("log_symbol sym_data = %s\n", sym_data);
+//	printf("log_symbol sym_data = %s\n", sym_data);
 
-//	sym_data = buf;
-//	free(buf);										//メモリーの開放。
+//	sym_data = buf;					//文法の間違い。bufの文字列をsym_dataにコピーしたことにならない
+//	free(buf);						//メモリーの開放。
 	return SYMBOL;
 }
 
-enum token_type number(const char *string, int first){	//number関数は読み込んだ数字の最初と最後を渡して、enum ttのnumberへ格納する
+enum token_type number(const char *string, int first){	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
 	int num_token = string[first]-48;	//数字のトークン
 	enum token_type tt;
 	while(47 < string[first+1] && string[first+1] < 58){
 		num_token = num_token * 10 + (string[first+1]-48);
 		first++;
 	}
-	jindex = first;
+	jindex = first;			//最後の数字のindexを覚える。
 	num_data = num_token;
 	return NUMBER;
 }
 
-void one_symbol(const char *string, int index){
-	switch(string[index]){
+enum token_type one_symbol(const char *string, int index){
+	one_symbol_data = string[index];
+	switch(one_symbol_data){
 		case '(':
-			one_symbol_data = string[index];//文字を続けて読み込む処理を加える。
-			tt = OPEN;
+//			jindex++;	//jindexに次のindexを指すようにする。
+			return OPEN;//文字を続けて読み込む処理を加える。
 			break;
 		case ')':
-			one_symbol_data = string[index];//文字の読み込みを終了する処理を加える。
-			tt = CLOSE;
+//			jindex++;
+			return CLOSE;//文字の読み込みを終了する処理を加える。
 			break;
 		case '+':
 		case '*':
 		case '-':
 		case '/':
-			one_symbol_data = string[index];//文字を続けて読み込む処理を加える。
-			tt = SYMBOL;
+//			jindex++;
+			return SYMBOL;//文字を続けて読み込む処理を加える。
 			break;
 		default:
 			one_symbol_data = 0;
-			tt = SYMBOL;
+//			jindex++;
+	printf("error one_symbol_data = %d, token_type = %d\n",one_symbol_data,tt);
+			return SYMBOL;
 			break;
 	}
 }
