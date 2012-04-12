@@ -1,1 +1,1 @@
-void tokenize(const char* input);
+int tokenize(const char* input, int tmp);
