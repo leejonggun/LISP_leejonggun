@@ -26,6 +26,7 @@ void free_node(node_t *node){
 			free(node);
 			break;
 		case OPERATOR:
+			free(node->character);
 			free(node);
 			break;
 		case NUMBER:

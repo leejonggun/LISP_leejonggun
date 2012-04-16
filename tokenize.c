@@ -16,48 +16,16 @@ enum token_type number (const char *string, int first);	//number関数は読み�
 enum token_type operator (const char *string, int index);	//Recognize the operator and put up tt.
 node_t* make_node (node_t *node, enum token_type tt, int token_length);
 
-node_t* make_list () {
+node_t* make_list () {	//listを作る。
 	node_t *list = (node_t*) malloc (sizeof (node_t) );
 	list->tt = OPEN;
 	return list;
 }
-/*
-node_t* connect ( const char *input){
-	node_t *list = make_list ();
-	do {
-		jindex++;	//次のトークンまでindexを進める。
-	} while ( input[jindex] == ' ' );
 
-	tmp_node = tokenize ( input, jindex );
-	list->car = tmp_node;
-	printf("log 1 :list->car, tokenize(input, jinex) '%p' = '%p'\n",list->car, tmp_node);
-	do {
-		jindex++;//次のトークンを調べる。
-	} while ( input[jindex] == ' ');
-	if ( input[jindex] != ')') {// CLOSEじゃないならループを続ける。
-		tmp_node = connect ( input, jindex);
-		list->cdr = tmp_node;
-		printf("log 2 :list->cdr, tmp_node '%p' = '%p'\n",list->cdr, tmp_node);
-		return list;
-	} else if ( input[index] == ')') {//CLOSEならtokenizeに返してあげる
-		tmp_node = tokenize ( input, jindex );
-		list->cdr = tmp_node;
-		printf("log 3 :list->cdr->tt, list->cdr = close_node '%d', '%p' = '%p'\n",list->cdr->tt,list->cdr, tmp_node);
-		return list;
-	}
-
-	//上記以外の場合はありえないけど、一応syntax処理。
-	printf("ERROR: in connect.Something wrong.");
-	return NULL;
-}
-
-*/
 node_t* tokenize (const char *input) {	
 	while ( input[jindex] == ' ') {		//最初の'('を探す。
 		jindex++;
 	}
-//	tmp = jindex;	//Read from index.
-
 		node_t *open_node = (node_t*) malloc (sizeof (node_t) );
 	if (input[jindex] == '(') {		//'('～')'まで
 		node_t *root = open_node;
@@ -74,39 +42,33 @@ node_t* tokenize (const char *input) {
 			//CLOSEの前の' 'を読み飛ばす。
 		}
 		//CLOSEが正常に来た場合:OPEN nodeの返す。
-		open_node->tt = CLOSE;
-		open_node->car = NULL;
-		open_node->cdr = NULL;
+		tt = CLOSE;
+		//open_node->car = NULL;
+		//open_node->cdr = NULL;
+		open_node = make_node ( open_node, tt, 1);
 		jindex++;
+		printf("CLOSE;root, root->tt ='%p', '%d'\n",root, root->tt);
 		return root;
 		
-//		printf("CLOSE:root, root->tt ='%p', '%d'\n",open_node,open_node->tt);
-//		return open_node;
 	} else if ( input[jindex] == ')') {	//CLOSEエラー処理。
-//			tt = CLOSE;
-//			open_node = make_node ( open_node, tt ,1);
-//			if ( input[jindex+1] == '\0' ) {	//最後のCLOSEなら終わり。	最後のCLOSEの後、' 'を書かないようにする。
-//				jindex++;
-//			}
-			//最後のCLOSEの部分もなぜかその前の要素がprintされる。
 			printf("CLOSE: Something Wrong.\n");
 				return NULL;
 
 	} else if (47 < input[jindex] && input[jindex] < 58) {		//'(', ')'以外
 		tt = number(input, jindex);
 		open_node = make_node (open_node, tt, length);
-		printf("NUMBER: open_node, open_node->number = '%p, %d'\n",open_node,open_node->number);
+//		printf("NUMBER:open_node->number = '%d'\n",open_node->number);
 		return open_node;
 	} else if ((64 < input[jindex] && input[jindex] < 91) || (96 < input[jindex] && input[jindex] < 123)){
 		tt = symbol (input, jindex);
 		open_node = make_node (open_node, tt, length);
 		free (sym_data);
-		printf("SYMBOL: open_node, open_node->character = '%p, %s'\n",open_node, open_node->character);
+//		printf("SYMBOL:open_node->character = '%s'\n", open_node->character);
 		return open_node;
 	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' ) {
 		tt = operator (input, jindex);
 		open_node = make_node (open_node, tt, 1);
-		printf("operator: open_node, open_node->character = '%p, %s'\n",open_node, open_node->character);
+//		printf("OPERATOR:open_node->character = '%s'\n", open_node->character);
 		return open_node;
 	}
 	//上記のどれにも当てはまらなかったらエラー。
@@ -186,6 +148,7 @@ node_t* make_node (node_t *node, enum token_type tt, int token_length){
 		}
 		return node;
 	} else if (tt == CLOSE ) {
+		//node->tt = CLOSE;
 		node->car = NULL;
 		node->cdr = NULL;
 		return node;

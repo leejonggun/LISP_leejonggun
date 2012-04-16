@@ -24,5 +24,5 @@ extern node_t *open_node;		//indicates previous list of OPEN node
 extern node_t* tokenize (const char* input);				
 extern void print_node (node_t *node);
 extern void free_node (node_t *node);
-//extern node_t* eval (node_t *node);
+extern int eval (node_t *node);
 #endif

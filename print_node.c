@@ -6,7 +6,7 @@
 void print_node(node_t *node) {		//node = root. root indicates '('node.
 	switch(node->tt) {
 		case OPEN:
-			printf("node, node->car, node->cdr = '%p, %p, %p'\n",node,node->car,node->cdr);
+			printf("OPEN:node, node->car, node->cdr = '%p, %p, %p'\n",node,node->car,node->cdr);
 			if(node->car != NULL){
 				print_node(node->car);
 			}else if(node->car == NULL){
@@ -21,33 +21,20 @@ void print_node(node_t *node) {		//node = root. root indicates '('node.
 			}
 			break;
 		case CLOSE:
-			printf("CLOSE:node->car, node->cdr = '%p, %p'\n",node->car,node->cdr);
+			printf("CLOSE:node = '%p'\n",node);
 			break;
 		case OPERATOR:
-			printf("OPERATER:*node->character, node->cdr = '%c, %p'\n",*node->character,node->cdr);
+
+			printf("OPERATER:node, node->character = '%p, %s'\n",node,node->character);
 			break;
 		case NUMBER:
-			printf("NUMBER:node->number, node->cdr = '%d, %p'\n",node->number,node->cdr);
+			printf("NUMBER:node, node->number = '%p, %d'\n",node,node->number);
 			break;
 		case SYMBOL:
-			printf("SYMBOL:node->character, node->cdr = '%s, %p'\n",node->character,node->cdr);
+			printf("SYMBOL:node, node->character = '%p, %s'\n",node,node->character);
 			break;
 		default:
-			printf("ERROR: exception(This node has no token_type tt\n");
+			printf("ERROR:in print_node: exception(This node has no token_type tt\n");
 			break;
-/*  		if(node->car != NULL){
-				print(node->car);
-			}else if(node->car == NULL){
-				printf("This list node has no data pointer?\n");
-				break;
-			}
-			if(node->cdr != NULL){
-				printf("LIST:node->car, node->cdr = '%p, %p'\n",node->car,node->cdr);
-				print(node->cdr);
-			}else if(node->cdr == NULL){
-				printf("Sonething wrong for CLOSE node\n");
-				break;
-			}
-*/
 		}
 }
