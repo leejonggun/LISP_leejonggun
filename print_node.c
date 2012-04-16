@@ -6,7 +6,7 @@
 void print_node(node_t *node) {		//node = root. root indicates '('node.
 	switch(node->tt) {
 		case OPEN:
-			printf("node->car, node->cdr = '%p, %p'\n",node->car,node->cdr);
+			printf("node, node->car, node->cdr = '%p, %p, %p'\n",node,node->car,node->cdr);
 			if(node->car != NULL){
 				print_node(node->car);
 			}else if(node->car == NULL){
@@ -21,7 +21,7 @@ void print_node(node_t *node) {		//node = root. root indicates '('node.
 			}
 			break;
 		case CLOSE:
-			printf("CLOSE:prev_list->car, prev_list->cdr = '%p, %p'\n",prev_list->car,prev_list->cdr);
+			printf("CLOSE:node->car, node->cdr = '%p, %p'\n",node->car,node->cdr);
 			break;
 		case OPERATER:
 			printf("OPERATER:*node->character, node->cdr = '%c, %p'\n",*node->character,node->cdr);

@@ -7,23 +7,24 @@ int main(int argc, char** argv) {
 	char *input = NULL;
 	while((input = readline(">>> "))){
 		int tmp = 0;
-		node_t *node_from_tokenize = NULL;
-		root = NULL;
-		prev_list = NULL;
-		sym_data = NULL;
-		operater_data = 0;
-		num_data = 0;
+		node_t *root_from_tokenize = NULL;
+//		node_t *calc_result = NULL;
 		jindex = 0;
 		while (tmp != (strlen(input))) {
-			node_from_tokenize = tokenize(input, tmp);
+			root_from_tokenize = tokenize(input, tmp);
+			printf("tokenize finished, tmp = '%d'\n", tmp);
 			tmp = jindex;
+//			if ( root_from_tokenize == NULL ) {
+//				printf("ERROR in main\n");
+//				return 0;
+//			}
 		}
-		print_node(node_from_tokenize);
-		printf("Before free_node(root)\n");
-		free_node(node_from_tokenize);
+		print_node(root_from_tokenize);
+		printf("After print_node(root)\n");
+//		calc_result = eval ( root_from_tokenize );
+//		printf("After eval\n");
+		free_node(root_from_tokenize);
 		printf("After free_node(root)\n");
 	}
 	return 0;
 }
-
-

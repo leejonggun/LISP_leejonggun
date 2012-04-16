@@ -23,7 +23,7 @@ void free_node(node_t *node){
 //			printf("Free_node:sym_data ='%p'\n",sym_data);
 			break;
 		case CLOSE:
-			free(prev_list);
+			free(node);
 			break;
 		case OPERATER:
 			free(node);

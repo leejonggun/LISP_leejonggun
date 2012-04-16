@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.4)
 set(LISP_SRC
 		tokenize.c
-		make_node.c
 		print_node.c
 		free_node.c
 		main.c
