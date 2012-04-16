@@ -25,7 +25,7 @@ void free_node(node_t *node){
 		case CLOSE:
 			free(node);
 			break;
-		case OPERATER:
+		case OPERATOR:
 			free(node);
 			break;
 		case NUMBER:

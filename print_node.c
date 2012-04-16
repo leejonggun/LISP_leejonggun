@@ -23,7 +23,7 @@ void print_node(node_t *node) {		//node = root. root indicates '('node.
 		case CLOSE:
 			printf("CLOSE:node->car, node->cdr = '%p, %p'\n",node->car,node->cdr);
 			break;
-		case OPERATER:
+		case OPERATOR:
 			printf("OPERATER:*node->character, node->cdr = '%c, %p'\n",*node->character,node->cdr);
 			break;
 		case NUMBER:

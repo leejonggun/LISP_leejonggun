@@ -6,14 +6,14 @@
 int length = 0;			//The length of string token.
 int jindex = 0;			//index
 char *sym_data = NULL;
-char operater_data = 0;
+char operator_data = 0;
 int num_data = 0;
 enum token_type tt;		//token type
 node_t* tmp_node = NULL;
 
 enum token_type symbol (const char *string, int last);	//Read string data.
 enum token_type number (const char *string, int first);	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
-enum token_type operater (const char *string, int index);	//Recognize the operater and put up tt.
+enum token_type operator (const char *string, int index);	//Recognize the operator and put up tt.
 node_t* make_node (node_t *node, enum token_type tt, int token_length);
 
 node_t* make_list () {
@@ -21,26 +21,25 @@ node_t* make_list () {
 	list->tt = OPEN;
 	return list;
 }
-node_t* connect ( const char *input, int index, node_t *node){
+/*
+node_t* connect ( const char *input){
 	node_t *list = make_list ();
 	do {
-		index++;	//次のトークンまでindexを進める。
-	} while ( input[index] == ' ' );
-	jindex = index;
+		jindex++;	//次のトークンまでindexを進める。
+	} while ( input[jindex] == ' ' );
 
 	tmp_node = tokenize ( input, jindex );
 	list->car = tmp_node;
 	printf("log 1 :list->car, tokenize(input, jinex) '%p' = '%p'\n",list->car, tmp_node);
 	do {
-		index++;//次のトークンを調べる。
-	} while ( input[index] == ' ');
-	if ( input[index] != ')') {// CLOSEじゃないならループを続ける。
-		tmp_node = connect ( input, jindex, list->cdr );
+		jindex++;//次のトークンを調べる。
+	} while ( input[jindex] == ' ');
+	if ( input[jindex] != ')') {// CLOSEじゃないならループを続ける。
+		tmp_node = connect ( input, jindex);
 		list->cdr = tmp_node;
 		printf("log 2 :list->cdr, tmp_node '%p' = '%p'\n",list->cdr, tmp_node);
 		return list;
 	} else if ( input[index] == ')') {//CLOSEならtokenizeに返してあげる
-		jindex = index;
 		tmp_node = tokenize ( input, jindex );
 		list->cdr = tmp_node;
 		printf("log 3 :list->cdr->tt, list->cdr = close_node '%d', '%p' = '%p'\n",list->cdr->tt,list->cdr, tmp_node);
@@ -51,44 +50,47 @@ node_t* connect ( const char *input, int index, node_t *node){
 	printf("ERROR: in connect.Something wrong.");
 	return NULL;
 }
-node_t* tokenize (const char *input, int tmp) {	
+
+*/
+node_t* tokenize (const char *input) {	
 	while ( input[jindex] == ' ') {		//最初の'('を探す。
 		jindex++;
 	}
-	tmp = jindex;	//Read from index.
+//	tmp = jindex;	//Read from index.
 
-	node_t *open_node = (node_t*) malloc (sizeof (node_t) );
-
+		node_t *open_node = (node_t*) malloc (sizeof (node_t) );
 	if (input[jindex] == '(') {		//'('～')'まで
+		node_t *root = open_node;
 		open_node->tt = OPEN;
 		printf("OPEN:root, root->tt ='%p', '%d'\n",open_node, open_node->tt);
 		jindex++;	//OPEN nodeを読んだ後、次の文字から読むためにindexを進める
-			open_node->car = tokenize (input, jindex);
-			if ( open_node->car == NULL ) {			//return値がNULLの時はエラーの時で、ループを終了させる。
-				printf("ERROR:Please input '(' , ')', number or sting\n");
-				return NULL;
+		while ( input[jindex] != ')') {
+			open_node->car = tokenize (input);
+			open_node->cdr = make_list ();
+			open_node = open_node->cdr;
+			while ( input[jindex] == ' ') {
+			jindex++;
 			}
-			open_node->cdr = connect ( input, jindex, open_node->cdr );
-			//connectからはinput[jindex] = ')'になって返ってくる。
-			do { //次のトークンが終わりがどうかを確認。
-				jindex++;
-			} while (input[jindex] == ' ');
-			if ( input[jindex] == '\0' ) {
-				return open_node;
-			}
-			
-			printf("CLOSE:root, root->tt ='%p', '%d'\n",open_node,open_node->tt);
-			return open_node;
-	} else if ( input[jindex] == ')') {
+			//CLOSEの前の' 'を読み飛ばす。
+		}
 		//CLOSEが正常に来た場合:OPEN nodeの返す。
-			tt = CLOSE;
-			open_node = make_node ( open_node, tt ,1);
+		open_node->tt = CLOSE;
+		open_node->car = NULL;
+		open_node->cdr = NULL;
+		jindex++;
+		return root;
+		
+//		printf("CLOSE:root, root->tt ='%p', '%d'\n",open_node,open_node->tt);
+//		return open_node;
+	} else if ( input[jindex] == ')') {	//CLOSEエラー処理。
+//			tt = CLOSE;
+//			open_node = make_node ( open_node, tt ,1);
 //			if ( input[jindex+1] == '\0' ) {	//最後のCLOSEなら終わり。	最後のCLOSEの後、' 'を書かないようにする。
-				jindex++;
+//				jindex++;
 //			}
 			//最後のCLOSEの部分もなぜかその前の要素がprintされる。
-			printf("CLOSE: open_node = '%p'\n",open_node);
-				return open_node;
+			printf("CLOSE: Something Wrong.\n");
+				return NULL;
 
 	} else if (47 < input[jindex] && input[jindex] < 58) {		//'(', ')'以外
 		tt = number(input, jindex);
@@ -102,9 +104,9 @@ node_t* tokenize (const char *input, int tmp) {
 		printf("SYMBOL: open_node, open_node->character = '%p, %s'\n",open_node, open_node->character);
 		return open_node;
 	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' ) {
-		tt = operater (input, jindex);
+		tt = operator (input, jindex);
 		open_node = make_node (open_node, tt, 1);
-		printf("OPERATER: open_node, open_node->character = '%p, %s'\n",open_node, open_node->character);
+		printf("operator: open_node, open_node->character = '%p, %s'\n",open_node, open_node->character);
 		return open_node;
 	}
 	//上記のどれにも当てはまらなかったらエラー。
@@ -127,6 +129,7 @@ enum token_type symbol(const char *string, int last){	//Read string data.
 	j++;
 	}
 	sym_data[j] = '\0';
+	jindex++;
 	return SYMBOL;
 }
 
@@ -137,32 +140,38 @@ enum token_type number(const char *string, int first){	//number関数は読み�
 		num_token = num_token * 10 + (string[last+1]-48);
 		last++;
 	}
-	jindex = last;			//最後の数字のindexを覚える。
+	jindex = last+1;			//最後の数字のindexを覚える。
 	length = last - first;
 	num_data = num_token;
 	return NUMBER;
 }
 
-enum token_type operater(const char *string, int index){	//Recognize the operater and put up tt.
-	operater_data = string[index];
-	switch(operater_data){
+enum token_type operator(const char *string, int index){	//Recognize the operator and put up tt.
+	operator_data = string[index];
+	switch(operator_data){
 		case '+':
 		case '*':
 		case '-':
 		case '/':
-			return OPERATER;
+			jindex++;
+			return OPERATOR;
 		default:
-			operater_data = OPERATER;
+			operator_data = OPERATOR;
 			printf("error\n");
-			return OPERATER;
+			jindex++;
+			return OPERATOR;
 	}
 }
 
 node_t* make_node (node_t *node, enum token_type tt, int token_length){
 	node->tt = tt;
-	if (tt == OPERATER) {		//Atom_node
+	if (tt == OPERATOR) {		//Atom_node
 		node->cdr = NULL;
-		node->character = &operater_data;//node->character got operater.
+		char *calc = (char *)malloc (2);
+		calc[0] = operator_data;
+		calc[1] = '\0';
+		node->character = calc;
+//		node->character = &operator_data;//node->character got operator.
 		return node;	
 	} else if (tt == NUMBER) {			//Atom
 		node->cdr = NULL;			//Atom has no cdr.

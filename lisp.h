@@ -1,7 +1,7 @@
 #ifndef LISP_H
 #define LISP_H
 
-enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATER};
+enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATOR};
 typedef struct node_t{			//Make tree construction
 	enum token_type tt;			//The type of token
 	union{
@@ -21,7 +21,7 @@ extern node_t *root;			//indicates '(' node.
 extern node_t *open_node;		//indicates previous list of OPEN node
 
 //関数定義	共有する関数を定義するときはexternをつける。
-extern node_t* tokenize (const char* input, int tmp);				
+extern node_t* tokenize (const char* input);				
 extern void print_node (node_t *node);
 extern void free_node (node_t *node);
 //extern node_t* eval (node_t *node);

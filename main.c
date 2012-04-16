@@ -11,9 +11,9 @@ int main(int argc, char** argv) {
 //		node_t *calc_result = NULL;
 		jindex = 0;
 		while (tmp != (strlen(input))) {
-			root_from_tokenize = tokenize(input, tmp);
-			printf("tokenize finished, tmp = '%d'\n", tmp);
+			root_from_tokenize = tokenize(input);
 			tmp = jindex;
+			printf("tokenize finished, tmp = '%d'\n", tmp);
 //			if ( root_from_tokenize == NULL ) {
 //				printf("ERROR in main\n");
 //				return 0;
