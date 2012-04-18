@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include "lisp.h"
 
+hash_table_t *setq_table;
+hash_table_t *defin_table;
+
 int add ( node_t *node );
 int sub ( node_t *node );
 int mul ( node_t *node );
@@ -102,11 +105,13 @@ int eval ( node_t *node ) {
 			/*if文,setq文などの関数が来た場合*/
 		} else if (node->car->tt == SYMBOL) {
 			int symbol_result = 0;
+			/* if文 */
 			if ( string_cmp (node->car, "if" ) == 0 ) {
 				symbol_result = func_if (node->cdr);
-			/* to do if文作成 */
 			} else if ( string_cmp ( node->car, "setq" ) == 0 ) {
-				printf("to do setq_func\n");
+				hash_set ( setq_table, node->cdr, node->cdr->cdr );
+				return symbol_result;	//to do
+				/*printf("to do setq_func\n");
 				node_t *setq_node;
 				setq_node = func_setq ( node->cdr );
 				if ( setq_node == NULL ) {
@@ -116,8 +121,18 @@ int eval ( node_t *node ) {
 				printf("setq_node->character, setq_node->cdr->car->number = '%s, %d'\n", setq_node->character, setq_node->cdr->number);
 				free (setq_node->character);	//to do 本当はlispを終了するまでfreeしないで持っておく
 				free (setq_node);	//to do lispを終了する(quit関数を作る)とfreeする。
-				printf("TODO:func_setq in eval.c: Tentatively func_setq is working. Now the variable is freed. But, I have to keep the variable\n");
+				printf("to do:func_setq in eval.c: Tentatively func_setq is working. Now the variable is freed. But, I have to keep the variable\n");
 				return 0;
+				 */
+			} else if (string_cmp ( node->car, "defin")) {	//関数定義が来たとき、
+				hash_set ( defin_table, node->cdr, node->cdr->cdr );
+				return symbol_result;	// to do
+			} else {	//定義した関数名が来たとき、
+				
+				if ( node->car == hash_search ( defin_table, node )) {
+					/*定義した関数名がdefin_table中に見つかった*/
+					return symbol_result;	//to do
+						}
 			}
 		return symbol_result;
 		}
@@ -330,3 +345,5 @@ int func_if ( node_t *node ) {
 	}
 	return run_number;
 }
+
+

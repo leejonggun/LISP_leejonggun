@@ -1,6 +1,8 @@
 #ifndef LISP_H
 #define LISP_H
 
+#define HASH_SIZE 8
+
 enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATOR, COMP};
 typedef struct node_t{			//Make tree construction
 	enum token_type tt;			//The type of token
@@ -11,8 +13,19 @@ typedef struct node_t{			//Make tree construction
 	};
 	struct node_t *cdr;			//To List. *cdr in Atom is NULL. Only has List *cdr.
 } node_t;
+typedef struct hash_entry_t {
+	    const char *key;
+		    node_t *value;
+			    /* list */
+			struct hash_entry_t *next;
+} hash_entry_t;
+typedef struct hash_table_t {
+	    hash_entry_t* entry[HASH_SIZE];
+		    /* stack */
+		    struct hash_table_t *prev;
+}hash_table_t;
 
-//共有する変数定義	共有する変数を定義するときはexternはつけない。
+//共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
 extern int num_data;			//number token.
@@ -25,4 +38,6 @@ extern node_t* tokenize (const char* input);
 extern void print_node (node_t *node);
 extern void free_node (node_t *node);
 extern int eval (node_t *node);
+extern void hash_set (hash_table_t *table, node_t *key, node_t *value);
+extern node_t *hash_search (hash_table_t *table, node_t *node);
 #endif

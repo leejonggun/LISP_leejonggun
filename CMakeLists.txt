@@ -4,6 +4,7 @@ set(LISP_SRC
 		print_node.c
 		free_node.c
 		eval.c
+		hash.c
 		main.c
    )
 
