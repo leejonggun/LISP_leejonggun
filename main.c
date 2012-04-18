@@ -16,15 +16,28 @@ int main(int argc, char** argv) {
 			printf("tokenize finished, tmp = '%d'\n", tmp);
 			if ( root_from_tokenize == NULL ) {
 				printf("ERROR in main\n");
-				return 0;
+				break;
 			}
 		}
+		if ( root_from_tokenize != NULL ) {
 		print_node(root_from_tokenize);
 		printf("After print_node(root)\n");
 		calc_result = eval (root_from_tokenize);
-		printf("After eval, calc_result = '%d'\n",calc_result);
+		if ( calc_result == 0 )	//to do Truely, the result of comparison is not '0' and '1' but 't' and 'Nil'.
+			printf("calc_result ='%d', comp_result =False!\n",calc_result);
+		else if ( calc_result == 1 )
+			printf("calc_result ='%d', comp_result = True!\n",calc_result);
+		else if ( calc_result == -1 )
+			printf("calc_result ='%d'. This is ERROR Message, means Something wrong!\n",calc_result);
+		else
+			printf("After eval, calc_result = '%d'\n",calc_result);
+
 		free_node(root_from_tokenize);
 		printf("After free_node(root)\n");
+		} else {
+			printf("The tokenizer doesn't work. Please debug tokenize.c\n");
+//			return 0;
+		}
 	}
 	return 0;
 }

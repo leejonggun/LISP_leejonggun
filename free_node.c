@@ -37,6 +37,10 @@ void free_node(node_t *node){
 			free(node->character);
 			free(node);
 			break;
+		case COMP:
+			free(node->character);
+			free(node);
+			break;
 		default:
 			printf("ERROR in free_node: exception occured.");
 			break;

@@ -1,7 +1,7 @@
 #ifndef LISP_H
 #define LISP_H
 
-enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATOR};
+enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATOR, COMP};
 typedef struct node_t{			//Make tree construction
 	enum token_type tt;			//The type of token
 	union{

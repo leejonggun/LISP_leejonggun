@@ -13,7 +13,7 @@ node_t* tmp_node = NULL;
 
 enum token_type symbol (const char *string, int last);	//Read string data.
 enum token_type number (const char *string, int first);	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
-enum token_type operator (const char *string, int index);	//Recognize the operator and put up tt.
+enum token_type operator (const char *string, int index);	//Recognize the operator (including Compare operator) and put up tt.
 node_t* make_node (node_t *node, enum token_type tt, int token_length);
 
 node_t* make_list () {	//listを作る。
@@ -30,10 +30,13 @@ node_t* tokenize (const char *input) {
 	if (input[jindex] == '(') {		//'('～')'まで
 		node_t *root = open_node;
 		open_node->tt = OPEN;
-		printf("OPEN:root, root->tt ='%p', '%d'\n",open_node, open_node->tt);
+//		printf("OPEN:root, root->tt ='%p', '%d'\n",open_node, open_node->tt);
 		jindex++;	//OPEN nodeを読んだ後、次の文字から読むためにindexを進める
 		while ( input[jindex] != ')') {
 			open_node->car = tokenize (input);
+			if ( open_node->car == NULL ) {
+				return NULL;
+			}
 			open_node->cdr = make_list ();
 			open_node = open_node->cdr;
 			while ( input[jindex] == ' ') {
@@ -47,7 +50,7 @@ node_t* tokenize (const char *input) {
 		//open_node->cdr = NULL;
 		open_node = make_node ( open_node, tt, 1);
 		jindex++;
-		printf("CLOSE;root, root->tt ='%p', '%d'\n",root, root->tt);
+//		printf("CLOSE;root, root->tt ='%p', '%d'\n",root, root->tt);
 		return root;
 		
 	} else if ( input[jindex] == ')') {	//CLOSEエラー処理。
@@ -65,14 +68,14 @@ node_t* tokenize (const char *input) {
 		free (sym_data);
 //		printf("SYMBOL:open_node->character = '%s'\n", open_node->character);
 		return open_node;
-	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' ) {
+	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' || input[jindex] == '<' || input[jindex] == '>' || input[jindex] == '=' ) {	//to do '<=', '>=', '/='
 		tt = operator (input, jindex);
 		open_node = make_node (open_node, tt, 1);
 //		printf("OPERATOR:open_node->character = '%s'\n", open_node->character);
 		return open_node;
 	}
 	//上記のどれにも当てはまらなかったらエラー。
-	printf("ERROR: Please input '(', ')', 'number' or 'string.'\n");
+	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string.'\n");
 	return NULL;
 }
 
@@ -83,7 +86,7 @@ enum token_type symbol(const char *string, int last){	//Read string data.
 					last++;
 	}
 	jindex = last;
-	length = last - first;
+	length = last - first+1;
 	sym_data = (char*)malloc(sizeof(length+1));//文字数+1分メモリーを確保する。
 	j = 0;
 	for(i = first; i <= last; i++){
@@ -108,7 +111,7 @@ enum token_type number(const char *string, int first){	//number関数は読み�
 	return NUMBER;
 }
 
-enum token_type operator(const char *string, int index){	//Recognize the operator and put up tt.
+enum token_type operator(const char *string, int index){	//Recognize the operator(including comparison) and put up tt.
 	operator_data = string[index];
 	switch(operator_data){
 		case '+':
@@ -117,6 +120,11 @@ enum token_type operator(const char *string, int index){	//Recognize the operato
 		case '/':
 			jindex++;
 			return OPERATOR;
+		case '<':
+		case '>':
+		case '=':		//to do '<=','>=','/='
+			jindex++;
+			return COMP;
 		default:
 			operator_data = OPERATOR;
 			printf("error\n");
@@ -127,12 +135,13 @@ enum token_type operator(const char *string, int index){	//Recognize the operato
 
 node_t* make_node (node_t *node, enum token_type tt, int token_length){
 	node->tt = tt;
-	if (tt == OPERATOR) {		//Atom_node
+	if (tt == OPERATOR || tt == COMP) {		//Atom_node
 		node->cdr = NULL;
 		char *calc = (char *)malloc (2);
 		calc[0] = operator_data;
 		calc[1] = '\0';
 		node->character = calc;
+		printf("TODO:make_node in tokenize.c: '<=', '>=', '/='\n");
 //		node->character = &operator_data;//node->character got operator.
 		return node;	
 	} else if (tt == NUMBER) {			//Atom

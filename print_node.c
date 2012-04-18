@@ -24,7 +24,6 @@ void print_node(node_t *node) {		//node = root. root indicates '('node.
 			printf("CLOSE:node = '%p'\n",node);
 			break;
 		case OPERATOR:
-
 			printf("OPERATER:node, node->character = '%p, %s'\n",node,node->character);
 			break;
 		case NUMBER:
@@ -32,6 +31,9 @@ void print_node(node_t *node) {		//node = root. root indicates '('node.
 			break;
 		case SYMBOL:
 			printf("SYMBOL:node, node->character = '%p, %s'\n",node,node->character);
+			break;
+		case COMP:
+			printf("COMP:node, node->character ='%p, %s'\n",node,node->character);
 			break;
 		default:
 			printf("ERROR:in print_node: exception(This node has no token_type tt\n");
