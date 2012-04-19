@@ -3,6 +3,7 @@ set(LISP_SRC
 		tokenize.c
 		print_node.c
 		free_node.c
+		copy_node.c
 		eval.c
 		hash.c
 		main.c

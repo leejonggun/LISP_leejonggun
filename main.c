@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
 		node_t *root_from_tokenize = NULL;
 		int calc_result = 0;
 		jindex = 0;
+		Comp_flag = 0;
 		while (tmp != (strlen(input))) {
 			root_from_tokenize = tokenize(input);
 			tmp = jindex;
@@ -19,22 +20,28 @@ int main(int argc, char** argv) {
 				break;
 			}
 		}
-		if ( root_from_tokenize != NULL ) {
+	if ( root_from_tokenize != NULL ) {
 		print_node(root_from_tokenize);
 		printf("After print_node(root)\n");
 		calc_result = eval (root_from_tokenize);
-		if ( calc_result == 0 )	//to do Truely, the result of comparison is not '0' and '1' but 't' and 'Nil'.
-			printf("calc_result ='%d', comp_result =False!\n",calc_result);
-		else if ( calc_result == 1 )
-			printf("calc_result ='%d', comp_result = True!\n",calc_result);
-		else if ( calc_result == -1 )
-			printf("calc_result ='%d'. This is ERROR Message, means Something wrong!\n",calc_result);
-		else
+		if ( Comp_flag == 1 ) {
+			switch (calc_result) {
+				case 0:
+					printf("After eval, Comp_flag is occered. comp_result = Nil.\n");
+					break;
+				case 1:
+					printf("After eval, Comp_flag is occered. comp_result = True.\n");
+					break;
+				case -1:
+					printf("After eval, Comp_flag is occered. But, Something wrong\n");
+					break;
+			}
+		} else if ( Comp_flag == 0 ) {
 			printf("After eval, calc_result = '%d'\n",calc_result);
-
-		free_node(root_from_tokenize);
-		printf("After free_node(root)\n");
-		} else {
+		}
+	free_node(root_from_tokenize);
+	printf("After free_node(root)\n");
+	} else {
 			printf("The tokenizer doesn't work. Please debug tokenize.c\n");
 //			return 0;
 		}

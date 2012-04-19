@@ -1,5 +1,12 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "lisp.h"
+
+int func_hash (const char *key);
+node_t *hash_search(hash_table_t *table, node_t *node);
+
+hash_entry_t *top[HASH_SIZE];
 /*
 #define HASH_SIZE 8
 typedef struct hash_entry_t {
@@ -17,17 +24,20 @@ typedef struct hash_table_t {
 /* defun f(n) (f(- n 1)) , (f 3)*/
 /* func: key=>f, value=>(f (n) f(- n 1)) */
 /* args: key=>n, value=>3 */
-void hash_set(hash_table_t *table, node_t *key, node_t *value) {	//*key is function name. *value is arguments of function. *table means ...?
+void hash_set(hash_table_t *table, node_t *key, node_t *value) {	//*key is function name. *value is arguments of function.
 	int bucket = 0;	//value of func_hash
-	node_t *func_name = key;	//func_name->tt = SYMBOL. args key = node->cdr
-	node_t *func_args = value;	//func_args->tt = OPEN. args value = node->cdr->cdr
 /*entry に 関数名key と関数の引数リストvalueを代入。*/	
-	hash_entry_t *entry;
-	entry->key = func_name->car->character;	// 関数名を entry の key に渡す。
-	entry->value = func_args->car;	// ( x y z ) 引数のリストの'('アドレスを渡す。
-/*ハッシュ関数にかけて、hast_table(hash_entry[HASH_SIZE])配列の何番目に格納するかを決定する。*/
+	hash_entry_t *entry = (hash_entry_t*) malloc (sizeof (hash_entry_t));
+	entry->key = (const char*) malloc (sizeof (strlen (key->car->character))+1);
+	strcpy ((char*)entry->key, key->car->character);	// 関数名を entry の key にコピーする。
+	entry->value = copy_node ( value );	// ( x y ) (+ x y)引数のリストの最初の'('アドレスを渡す。渡すんじゃなくて、valueもコピーする。
+
+	/*ハッシュ関数にかけて、hast_table(hash_entry[HASH_SIZE])配列の何番目に格納するかを決定する。*/
 	bucket = func_hash ( entry->key );	//table の bucket番目のentryに入れる。
-	table->entry[bucket] = entry;
+	//stack .
+		table->entry[bucket] = entry;
+		table->entry[bucket]->next = top[bucket];
+		top[bucket] = table->entry[bucket];
 }
 
 /* ハッシュ関数 : key % HASH_SIZE でもいいけど、keyが文字列なので、strlen(key) % HASH_SIZE にしてみる。*/
@@ -35,17 +45,29 @@ int func_hash (const char *key) {
 	return strlen (key) % HASH_SIZE;
 }
 
-node_t *hash_search(hash_table_t *table, node_t *node) {
+node_t *hash_search(hash_table_t *table, node_t *node) {	//tableの中のentryに連結されているのを探索する。(keyが違うのにvalueが等しい場合があるのでそれを防止する)
 	int bucket = 0;
-	bucket = func_hash (node->car->character);
-	
+	hash_entry_t *p;
+	bucket = func_hash (node->character);
+	//対応するものを見つけたらそのkey(関数名)に対応するvalue(引数)を返す。
+//		do {
+		for (p = table->entry[bucket]; p != NULL; p = p->next) {
+//			p = table->entry[buncket];
+			if (strcmp (node->character, p->key) == 0){
+				return p->value;
+			}
+//			p = p->next;
+//		} while (p != NULL);
+	}
+	return NULL;	//対応するものが見つからなかったらNULLを返す
 }
 /*
 defunが呼ばれた時	hash_set( ~ , ~ , ~ );
 関数テーブルに、関数名をkeyに、defun関数の引数全体をvalueとしてセットする
 
+
 defunした関数を呼び出す時
-関数テーブルからvalueを取ってくる
+関数テーブルからvalueを取ってくる	hash_search( ~ , ~ )
 関数の引数用のハッシュテーブルを新たに作って、スタックにプッシュする
 関数名をkeyに、関数テーブルから関数本体を取り出す
 (引数が正しいか確認する)
@@ -55,3 +77,4 @@ defunした関数を呼び出す時
 	＊関数のテーブルはスタックにしない(一意)
 	＊引数はスタック上に保存したいので、引数のテーブルはスタックにする(prevのフィールドを利用する)
 */
+

@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include "lisp.h"
 
-hash_table_t *setq_table;
-hash_table_t *defin_table;
+hash_table_t *setq_table = NULL;
+hash_table_t *defun_table = NULL;
+int Comp_flag = 0;
 
 int add ( node_t *node );
 int sub ( node_t *node );
@@ -16,63 +17,20 @@ int equal ( node_t *node );
 int func_if ( node_t *node);
 int string_cmp (node_t *node, char *string) {	//文字列の比較
 	int i;
-	printf("IN string_cmp\n");
 	for ( i = 0; i < (strlen (node->character)) ; i++ ) {
-		printf("log:string_cmp:in eval.c: node->character[%d] = '%c', string[%d] = '%c'\n", i, node->character[i], i, string[i]);
 		if ( string[i] != node->character[i]) {
 			return 1;
 		}
 	}
 	return 0;
 }
-	//setq作り
-node_t *belong_setq ( node_t *node ) {
-	node_t *setq_num;
-	//数字を格納した構造体を返して、func_setqに返す。(setq_variable->cdrにつなげる)
-	while ( node->tt != CLOSE ) {
-		setq_num = (node_t*) malloc ( sizeof (node_t) );
-		setq_num->tt = node->car->tt;
-		setq_num->number = eval ( node->car );
-		setq_num->cdr = NULL;
-		node = node->cdr;
+int length_cdr (node_t *first_OpenNode) {	//トークンの数を調べる。
+	int length = 0;
+	while ( first_OpenNode->tt != CLOSE ) {
+		length++;
+		first_OpenNode = first_OpenNode->cdr;
 	}
-	return setq_num;
-}
-node_t *func_setq ( node_t *node ) {	// ( setq x 1 ) を入力すると, 変数xが入ってるnodeのcdrは数字1が入ってるnodeを指す。
-	node_t *setq_variable = (node_t*) malloc ( sizeof (node_t) );
-	if ( node->car->tt == SYMBOL ) {	//"setq"の次のトークンが文字列ならsetq_variableを確保して変数を格納する。
-		int symbol_length = strlen (node->car->character);
-		setq_variable->tt = node->car->tt;
-		setq_variable->character = (char*) malloc ( sizeof ( symbol_length+1 ));
-		strcpy (setq_variable->character, node->car->character); 
-		//setq_variable->character = node->car->character; // eval ( node->car ); 
-		//上の意味はsetq_variableのcharacter(setq_variableのchar *characterが宣言されている。)にnode->car->characterを代入(更新)している?setq_variableのポインタcharacterがnode->car->characterを指しているに過ぎない？
-		if ( node->cdr->tt == CLOSE ) {// ( setq x ) 引数なしで変数を定義しようとする場合
-			printf("ERROR:func_setq in eval.c: SyntaxError. Need more arguments!\n");
-			return NULL;
-		}
-		if ( node->cdr->car->tt == NUMBER ) {
-			setq_variable->cdr = belong_setq ( node->cdr );	//正常処理。文字列の次のトークンが数字なら数字を読み込んで、文字列のcdr->数字のアドレスとする。
-			return setq_variable;
-		} else {
-			printf("ERROR:func_setq in eval.c: SyntaxError\n");
-			return NULL;
-		}
-		//else if ( node->cdr->car->tt == SYMBOL ) {		//もし、文字列の次のトークンも文字列ならもう一度func_setqを呼ぶ。to do
-		//	setq_variable->cdr = func_setq ( node->cdr );
-		//}
-//	to do
-	} else if ( node->car->tt == NUMBER ) {
-		setq_variable->tt = node->car->tt;
-		setq_variable->number = eval ( node->car );
-		setq_variable->cdr = NULL;
-		return setq_variable;
-	} else {
-		printf("ERROR1:in eval.c.func_setq\n");
-		return NULL;
-	}
-	printf("ERROR2:in eval.c.func_setq\n");
-	return NULL;	//これがないとコンパイル時warning出る。
+	return length;
 }
 int eval ( node_t *node ) {
 	int eval_result = 0;
@@ -90,8 +48,9 @@ int eval ( node_t *node ) {
 				eval_result = dir ( node->cdr );
 			}
 			return eval_result;
-			/*比較演算の選択*/
+			/*比較演算の選択*/ //to do フラグをつける。計算結果との区別
 		} else if( node->car->tt == COMP ) {
+			Comp_flag = 1;	
 			if ( node->car->character[0] == '<' ) {
 				eval_result = smaller ( node->cdr );// ( < 1 2 ) means True. (1 < 2 is true)
 			} else if ( node->car->character[0] == '>' ) {
@@ -100,49 +59,76 @@ int eval ( node_t *node ) {
 				eval_result = equal ( node->cdr );// ( = 1 1 ) means True. (1 = 1 is true)
 			}
 			return eval_result;
-//		else {
-			/* to do ERROR */
-			/*if文,setq文などの関数が来た場合*/
 		} else if (node->car->tt == SYMBOL) {
 			int symbol_result = 0;
 			/* if文 */
 			if ( string_cmp (node->car, "if" ) == 0 ) {
-				symbol_result = func_if (node->cdr);
-			} else if ( string_cmp ( node->car, "setq" ) == 0 ) {
-				hash_set ( setq_table, node->cdr, node->cdr->cdr );
-				return symbol_result;	//to do
-				/*printf("to do setq_func\n");
-				node_t *setq_node;
-				setq_node = func_setq ( node->cdr );
-				if ( setq_node == NULL ) {
-					printf("ERROR:func_setq in func_setq. SyntaxError.");
+				if ( length_cdr ( node ) != 4 ) {
+					printf("ERROR:func_if in eval.c: SyntaxError.( if (x) arg1 arg2 )\n");
 					return (-1);
 				}
-				printf("setq_node->character, setq_node->cdr->car->number = '%s, %d'\n", setq_node->character, setq_node->cdr->number);
-				free (setq_node->character);	//to do 本当はlispを終了するまでfreeしないで持っておく
-				free (setq_node);	//to do lispを終了する(quit関数を作る)とfreeする。
-				printf("to do:func_setq in eval.c: Tentatively func_setq is working. Now the variable is freed. But, I have to keep the variable\n");
-				return 0;
-				 */
-			} else if (string_cmp ( node->car, "defin")) {	//関数定義が来たとき、
-				hash_set ( defin_table, node->cdr, node->cdr->cdr );
-				return symbol_result;	// to do
-			} else {	//定義した関数名が来たとき、
-				
-				if ( node->car == hash_search ( defin_table, node )) {
-					/*定義した関数名がdefin_table中に見つかった*/
-					return symbol_result;	//to do
-						}
-			}
+				symbol_result = func_if (node->cdr);
+			/*setq文*/
+			} else if ( string_cmp ( node->car, "setq" ) == 0 ) {
+				if ( length_cdr ( node ) != 3 ) {
+					printf("ERROR:setq in eval.c: SyntaxError.( setq x arg1 )\n");
+					return (-1);
+				}
+				if ( setq_table == NULL ) {//最初に呼ばれたときだけmallocする。
+					setq_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
+				}
+				//node_t *search_result = hash_search (setq_table, node->cdr);
+				//対応するものがtableにないなら格納可能。
+				//対応するものがtableにある。table->entry[bucket]->nextにpushする。
+				node_t *tmp_setq = (node_t*) malloc (sizeof (node_t));
+				tmp_setq->number = eval ( node->cdr->cdr );
+				tmp_setq->tt = NUMBER;
+				tmp_setq->cdr = NULL;
+				hash_set ( setq_table, node->cdr, tmp_setq );//hash tableのどこかに格納。
+				printf("log: SUCCESS to set setq_hash_table.\n");
+				return eval (node->cdr->cdr);
+			/*defun文*/
+			} else if (string_cmp ( node->car, "defun") == 0 ) {	//関数定義が来たとき、
+				if ( length_cdr ( node ) != 4 ) {
+					printf("ERROR:defun in eval.c: SyntaxError.( defun name (args) (expression)\n");
+					return (-1);
+				}
+				if ( defun_table == NULL ) {
+					defun_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
+				}
+				//node_t *search_result = hash_search (defun_table, node->cdr);
+				//if ( search_result == NULL ) {//対応するものがtableにないなら格納可能。
+				//	hash_set ( defun_table, node->cdr, node->cdr->cdr );
+				//} else if ( search_result != NULL ) {//対応するものがtableにある。table->entry[bucket]->nextにpushする。
+				hash_set ( defun_table, node->cdr, node->cdr->cdr );//hash tableのどこかに格納。
+				//}
+				printf("log: SUCCESS to set defun_hash_table\n");
+				return symbol_result;
+			}  else {	//定義した関数名が来たとき、
+				if ( node->car == hash_search ( setq_table, node->car )) {
+					printf("log:asdf.\n");
+					/*定義した関数名がsetq_table中に見つかった*/
+					return eval (hash_search (setq_table, node->car));
+				} else if ( node->car == hash_search ( defun_table, node->car)) {
+					/*定義した変数名がdefun_table中に見つかった*/
+				//	node_t *defun_node = hash_search ( defun_table, node );
+
+				//	node->carには関数の引数を渡す。(f 2 3 )の(2 3)にあたる。
+					return eval (hash_search (defun_table, node->car));
+				}
+			} printf("This is not good\n");
 		return symbol_result;
+	} else if (node->car->tt == OPEN) { 
+				return eval (node->car);
 		}
 	/*数字なら数字を返す*/
 	} else if (node->tt == NUMBER) {
-	
 		return  node->number;
-
-	} 
-//上記のどれにも該当しないならエラー処理。
+	} else if ( node->tt == SYMBOL) {
+		node_t *setq_node = hash_search ( setq_table, node );
+		return eval ( setq_node );
+	}
+//上記のどれにも該当しないならエラー処理。0
 	return (-1);
 }
 
@@ -150,12 +136,12 @@ int add ( node_t *node ) {
 	int tmp_number = 0;
 	//	ここでevalを呼ぶ。CLOSEまでwhileでループする。
 	int add_result = 0;
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 	add_result = eval ( node->car );
 	node = node->cdr;
 	}
 	while ( node->tt != CLOSE ) {
-		if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );
 		} else {
 			printf("ERROR: add in eval.c\n");
@@ -169,12 +155,12 @@ int add ( node_t *node ) {
 int sub ( node_t *node ) {
 	int tmp_number = 0;
 	int sub_result = 0;
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 		sub_result = eval ( node->car );
 		node= node->cdr;
 	}
 	while ( node->tt != CLOSE ) {
-			if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+			if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );
 		} else {
 			printf("ERROR: sub in eval.c\n");
@@ -188,12 +174,12 @@ int sub ( node_t *node ) {
 int mul ( node_t *node ) {
 	int tmp_number = 0;
 	int mul_result = 1;
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 		mul_result = eval ( node->car );
 		node = node->cdr;
 	}
 	while ( node->tt != CLOSE ) {
-		if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );
 		} else {
 			printf("ERROR: mul in eval.c\n");
@@ -207,12 +193,12 @@ int mul ( node_t *node ) {
 int dir ( node_t *node ) {
 	int tmp_number = 0;
 	int dir_result = 1;
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 		dir_result = eval ( node->car );
 		node = node->cdr;
 	}
 	while ( node->tt != CLOSE ) {
-		if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );
 		} else {
 			printf("ERROR: dir in eval.c\n");
@@ -227,7 +213,7 @@ int smaller ( node_t *node ) {
 	int first_number = 0;
 	int tmp_number = 0;
 	int comp_result = 0;	//1 means True and 0 means False. Tentatively the result is False.
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {//最初の引数をfirst_numberに格納する。
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {//最初の引数をfirst_numberに格納する。
 		first_number = eval ( node->car );
 		node = node->cdr;
 	}
@@ -236,7 +222,7 @@ int smaller ( node_t *node ) {
 		return (-1);
 	}
 	while ( node->tt != CLOSE ) {
-		if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );	//2番目の引数からtmp_numberに格納して、比較をはじめる。
 			if ( first_number < tmp_number ) {	//比較結果がTrueなら比較するnumberを次にすすめる。(< 1 2 3 ) がTrue. (< 1 4 2)はFalse.
 				comp_result = 1;
@@ -258,7 +244,7 @@ int bigger ( node_t *node ) {
 	int first_number = 0;
 	int tmp_number = 0;
 	int comp_result = 0;	//1 means True and 0 means False. Tentatively the result is False.
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {//最初の引数をfirst_numberに格納する。
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {//最初の引数をfirst_numberに格納する。
 		first_number = eval ( node->car );
 		node = node->cdr;
 	}
@@ -267,7 +253,7 @@ int bigger ( node_t *node ) {
 		return (-1);
 	}
 	while ( node->tt != CLOSE ) {
-		if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );	//2番目の引数からtmp_numberに格納して、比較をはじめる。
 			if ( first_number > tmp_number ) {	//比較結果がTrueなら比較するnumberを次にすすめる。(< 1 2 3 ) がTrue. (< 1 4 2)はFalse.
 				comp_result = 1;
@@ -289,7 +275,7 @@ int equal ( node_t *node ) {
 	int first_number = 0;
 	int tmp_number = 0;
 	int comp_result = 0;	//1 means True and 0 means False. Tentatively the result is False.
-	if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {//最初の引数をfirst_numberに格納する。
+	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {//最初の引数をfirst_numberに格納する。
 		first_number = eval ( node->car );
 		node = node->cdr;
 	}
@@ -298,7 +284,7 @@ int equal ( node_t *node ) {
 		return (-1);
 	}
 	while ( node->tt != CLOSE ) {
-		if ( node->car->tt == NUMBER || node->car->tt == OPEN ) {
+		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );	//2番目の引数からtmp_numberに格納して、比較をはじめる。
 			if ( first_number == tmp_number ) {	//比較結果がTrueなら比較するnumberを次にすすめる。(< 1 2 3 ) がTrue. (< 1 4 2)はFalse.
 				comp_result = 1;
@@ -345,5 +331,3 @@ int func_if ( node_t *node ) {
 	}
 	return run_number;
 }
-
-

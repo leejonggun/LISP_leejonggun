@@ -30,14 +30,19 @@ extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
 extern int num_data;			//number token.
 extern int jindex;				//string index.
+extern int Comp_flag;			//Distinguish Compare and Calculate
 extern node_t *root;			//indicates '(' node.
 extern node_t *open_node;		//indicates previous list of OPEN node
+extern hash_table_t *setq_table;
+extern hash_table_t *defin_table;
 
 //関数定義	共有する関数を定義するときはexternをつける。
 extern node_t* tokenize (const char* input);				
 extern void print_node (node_t *node);
 extern void free_node (node_t *node);
+extern node_t *copy_node (node_t *node);
 extern int eval (node_t *node);
 extern void hash_set (hash_table_t *table, node_t *key, node_t *value);
 extern node_t *hash_search (hash_table_t *table, node_t *node);
+extern int length_cdr (node_t *first_OpenNode);
 #endif
