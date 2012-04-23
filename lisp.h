@@ -1,7 +1,7 @@
 #ifndef LISP_H
 #define LISP_H
 
-#define HASH_SIZE 8
+#define HASH_SIZE 4
 
 enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATOR, COMP};
 typedef struct node_t{			//Make tree construction
@@ -31,10 +31,11 @@ extern char operater_data;		//operater type.
 extern int num_data;			//number token.
 extern int jindex;				//string index.
 extern int Comp_flag;			//Distinguish Compare and Calculate
+extern int func_call_flag;
 extern node_t *root;			//indicates '(' node.
 extern node_t *open_node;		//indicates previous list of OPEN node
 extern hash_table_t *setq_table;
-extern hash_table_t *defin_table;
+extern hash_table_t *defun_table;
 
 //関数定義	共有する関数を定義するときはexternをつける。
 extern node_t* tokenize (const char* input);				

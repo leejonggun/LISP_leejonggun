@@ -6,6 +6,7 @@
 hash_table_t *setq_table = NULL;
 hash_table_t *defun_table = NULL;
 int Comp_flag = 0;
+int func_call_flag = 0;
 
 int add ( node_t *node );
 int sub ( node_t *node );
@@ -24,7 +25,7 @@ int string_cmp (node_t *node, char *string) {	//文字列の比較
 	}
 	return 0;
 }
-int length_cdr (node_t *first_OpenNode) {	//トークンの数を調べる。
+int length_cdr (node_t *first_OpenNode) {	//トークンのcdrの数を調べる。
 	int length = 0;
 	while ( first_OpenNode->tt != CLOSE ) {
 		length++;
@@ -59,7 +60,11 @@ int eval ( node_t *node ) {
 				eval_result = equal ( node->cdr );// ( = 1 1 ) means True. (1 = 1 is true)
 			}
 			return eval_result;
-		} else if (node->car->tt == SYMBOL) {
+		} else if (node->car->tt == NUMBER) {
+			return node->car->number;
+		} else if (node->car->tt == OPEN) {
+			return eval (node->car);
+		}else if (node->car->tt == SYMBOL) {
 			int symbol_result = 0;
 			/* if文 */
 			if ( string_cmp (node->car, "if" ) == 0 ) {
@@ -80,15 +85,17 @@ int eval ( node_t *node ) {
 				//node_t *search_result = hash_search (setq_table, node->cdr);
 				//対応するものがtableにないなら格納可能。
 				//対応するものがtableにある。table->entry[bucket]->nextにpushする。
-				node_t *tmp_setq = (node_t*) malloc (sizeof (node_t));
-				tmp_setq->number = eval ( node->cdr->cdr );
+				node_t *tmp_setq = (node_t*) malloc (sizeof (node_t));//setqのvalueを計算しておく
+				tmp_setq->number = eval ( node->cdr->cdr->car );
 				tmp_setq->tt = NUMBER;
 				tmp_setq->cdr = NULL;
 				hash_set ( setq_table, node->cdr, tmp_setq );//hash tableのどこかに格納。
+				int tmp_num = tmp_setq->number;
+				free(tmp_setq);
 				printf("log: SUCCESS to set setq_hash_table.\n");
-				return eval (node->cdr->cdr);
+				return tmp_num;
 			/*defun文*/
-			} else if (string_cmp ( node->car, "defun") == 0 ) {	//関数定義が来たとき、
+			} else if (string_cmp ( node->car, "defun") == 0 ) {
 				if ( length_cdr ( node ) != 4 ) {
 					printf("ERROR:defun in eval.c: SyntaxError.( defun name (args) (expression)\n");
 					return (-1);
@@ -103,35 +110,96 @@ int eval ( node_t *node ) {
 				hash_set ( defun_table, node->cdr, node->cdr->cdr );//hash tableのどこかに格納。
 				//}
 				printf("log: SUCCESS to set defun_hash_table\n");
+//				printf("defun_table->entry[1]->key'%s'\n",defun_table->entry[1]->key);
+//				printf("defun_table->entry[1]->value->car->car->character'%s'\n",defun_table->entry[1]->value->car->car->character);
 				return symbol_result;
-			}  else {	//定義した関数名が来たとき、
-				if ( node->car == hash_search ( setq_table, node->car )) {
-					printf("log:asdf.\n");
-					/*定義した関数名がsetq_table中に見つかった*/
-					return eval (hash_search (setq_table, node->car));
-				} else if ( node->car == hash_search ( defun_table, node->car)) {
-					/*定義した変数名がdefun_table中に見つかった*/
-				//	node_t *defun_node = hash_search ( defun_table, node );
-
-				//	node->carには関数の引数を渡す。(f 2 3 )の(2 3)にあたる。
-					return eval (hash_search (defun_table, node->car));
+			/* 関数呼び出し。( f 2 3 )が渡されたとき。*/
+			} else {
+				if (/* setq_table != NULL ||*/ defun_table != NULL ) {
+					node_t *func_value = hash_search(defun_table, node->car);//defun_table中に関数名(node->car->character)があるかどうか判断。
+					if ( func_value != NULL ) {//defun_tableに対応する関数があったら、
+						node_t *func_args = func_value->car;//func_argsは defun f ( n m ) ( + n m )の最初のOPENを指す。二番目のOPENはfunc_value->cdr->car.
+						defun_table->prev = (hash_table_t*) malloc (sizeof(hash_table_t) );//関数の引き数用のhash table。
+						node_t *args_given = node->cdr;
+						if ( length_cdr ( func_args ) != length_cdr ( node->cdr ) ) {
+							printf("ERROR: Too many of too few arguments, you give.\n");
+							return (-1);
+						}
+						func_call_flag = 1;
+						while ( func_args->tt != CLOSE ) {//与えられた引数を関数の引数にsetqする。
+				//			node_t *tmp_args = ( node_t* ) malloc ( sizeof (node_t));
+				//			tmp_args->tt = NUMBER;
+				//			tmp_args->cdr = NULL;
+				//			tmp_args->number = eval ( args_given );
+							hash_set (defun_table->prev, func_args, /*tmp_args*/ args_given);	//defun_table->prevは関数の引き数用のhash_table.
+			//				free(tmp_args);
+							args_given = args_given->cdr;
+							func_args = func_args->cdr;
+						}//setqし終わったら、その文字を使ってevalに渡す。計算してもらう。
+						node_t *function = func_value->cdr->car;
+						printf("before\n");
+						int result = eval ( function );
+						printf("after result = '%d'\n",result);
+						return result;//eval ( function );
+					} else {
+						printf("You don't define function1'%s'\n", node->car->character);
+						return (-1);
+					}
 				}
-			} printf("This is not good\n");
-		return symbol_result;
-	} else if (node->car->tt == OPEN) { 
-				return eval (node->car);
+				printf("You don't define function2'%s'\n", node->car->character);
+				return (-1);
+			}
+			/*引数用のsetq_tableにpush.*/
+			// else 				if ( node->car == hash_search ( defun_table, node->car)) 
+			//		printf("log:asdf.\n");
+					/*定義した関数名がsetq_table中に見つかった*/
+			//		return eval (hash_search (setq_table, node->car));
+			// else if ( node->car == hash_search ( defun_table, node->car)) 
+					/*定義した変数名がdefun_table中に見つかった*/
+					//node_t *defun_node = hash_search ( defun_table, node->car );
+					
+				//	node->carには関数の引数を渡す。(f 2 3 )の(2 3)にあたる。
+			//		return eval (hash_search (defun_table, node->car));
+			//	
 		}
 	/*数字なら数字を返す*/
 	} else if (node->tt == NUMBER) {
 		return  node->number;
-	} else if ( node->tt == SYMBOL) {
-		node_t *setq_node = hash_search ( setq_table, node );
-		return eval ( setq_node );
+	/*文字が来たらhash_tableの中を検索。*/
+	} else if (node->tt == SYMBOL) {
+		if ( setq_table != NULL || defun_table != NULL) {
+			//引数検査。引数をsetq_tableにsetq。
+			node_t *setq_node = NULL;
+			if ( setq_table != NULL ){
+				setq_node = hash_search ( setq_table, node );
+			}
+			if (setq_node == NULL) {
+				if ( defun_table != NULL ) {
+					if (defun_table->prev != NULL) {
+						node_t *defun_node = hash_search ( defun_table->prev, node );
+						if ( defun_node == NULL ) {
+							printf("You don't define the function3'%s'.\n",node->character);	
+								return (-1);
+						} else {//defun_tableに対応するものがあったら処理をする。
+							int defun_result = eval ( defun_node );
+							return defun_result;
+						}
+					} else {
+					printf("You don't define the variable'%s'.\n",node->character);
+					return (-1);
+					}
+				}
+			} else {
+				return eval ( setq_node );
+			}
+		}
+		printf("ERROR:eval in eval.c: SyntaxError. You don't define the character'%s'\n",node->character);
+		return (-1);
 	}
-//上記のどれにも該当しないならエラー処理。0
+//上記のどれにも該当しないならエラー処理。
+	printf("ERROR: eval in eval.c(188): You couldn't get any process.\n");
 	return (-1);
 }
-
 int add ( node_t *node ) {
 	int tmp_number = 0;
 	//	ここでevalを呼ぶ。CLOSEまでwhileでループする。

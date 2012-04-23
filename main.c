@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "lisp.h"
+#include <stdlib.h>
 #include <readline/readline.h>
+#include "lisp.h"
 
 
 int main(int argc, char** argv) {
@@ -11,6 +12,7 @@ int main(int argc, char** argv) {
 		int calc_result = 0;
 		jindex = 0;
 		Comp_flag = 0;
+		func_call_flag = 0;
 		while (tmp != (strlen(input))) {
 			root_from_tokenize = tokenize(input);
 			tmp = jindex;
@@ -37,9 +39,15 @@ int main(int argc, char** argv) {
 					break;
 			}
 		} else if ( Comp_flag == 0 ) {
+			if ( calc_result == -1 ) {
+				printf("Something wrong in eval.c\n");
+			} else {
 			printf("After eval, calc_result = '%d'\n",calc_result);
-		}
+			}	
+		}	
 	free_node(root_from_tokenize);
+	if ( func_call_flag == 1 ) //関数呼び出しの計算が終わったらフリーする。
+			free(defun_table->prev);
 	printf("After free_node(root)\n");
 	} else {
 			printf("The tokenizer doesn't work. Please debug tokenize.c\n");

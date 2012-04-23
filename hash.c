@@ -7,20 +7,6 @@ int func_hash (const char *key);
 node_t *hash_search(hash_table_t *table, node_t *node);
 
 hash_entry_t *top[HASH_SIZE];
-/*
-#define HASH_SIZE 8
-typedef struct hash_entry_t {
-	    const char *key;
-		    node_t *value;
-			    // list 
-			struct hash_entry_t *next;
-} hash_entry_t;
-typedef struct hash_table_t {
-	    hash_entry_t* entry[HASH_SIZE];
-		    // stack 
-		    struct hash_table_t *prev;
-}hash_table_t;
-*/
 /* defun f(n) (f(- n 1)) , (f 3)*/
 /* func: key=>f, value=>(f (n) f(- n 1)) */
 /* args: key=>n, value=>3 */
@@ -30,19 +16,21 @@ void hash_set(hash_table_t *table, node_t *key, node_t *value) {	//*key is funct
 	hash_entry_t *entry = (hash_entry_t*) malloc (sizeof (hash_entry_t));
 	entry->key = (const char*) malloc (sizeof (strlen (key->car->character))+1);
 	strcpy ((char*)entry->key, key->car->character);	// 関数名を entry の key にコピーする。
-	entry->value = copy_node ( value );	// ( x y ) (+ x y)引数のリストの最初の'('アドレスを渡す。渡すんじゃなくて、valueもコピーする。
-
+	if ( func_call_flag == 1 ) {
+		entry->value = copy_node ( value->car );
+	} else {
+		entry->value = copy_node ( value );	// ( x y ) (+ x y)引数のリストをコピーする。
+	}	
 	/*ハッシュ関数にかけて、hast_table(hash_entry[HASH_SIZE])配列の何番目に格納するかを決定する。*/
 	bucket = func_hash ( entry->key );	//table の bucket番目のentryに入れる。
-	//stack .
-		table->entry[bucket] = entry;
+		table->entry[bucket] = entry;	//stack.
 		table->entry[bucket]->next = top[bucket];
 		top[bucket] = table->entry[bucket];
 }
 
 /* ハッシュ関数 : key % HASH_SIZE でもいいけど、keyが文字列なので、strlen(key) % HASH_SIZE にしてみる。*/
 int func_hash (const char *key) {
-	return strlen (key) % HASH_SIZE;
+	return (strlen (key)) % HASH_SIZE;
 }
 
 node_t *hash_search(hash_table_t *table, node_t *node) {	//tableの中のentryに連結されているのを探索する。(keyが違うのにvalueが等しい場合があるのでそれを防止する)
@@ -50,14 +38,10 @@ node_t *hash_search(hash_table_t *table, node_t *node) {	//tableの中のentry�
 	hash_entry_t *p;
 	bucket = func_hash (node->character);
 	//対応するものを見つけたらそのkey(関数名)に対応するvalue(引数)を返す。
-//		do {
-		for (p = table->entry[bucket]; p != NULL; p = p->next) {
-//			p = table->entry[buncket];
-			if (strcmp (node->character, p->key) == 0){
-				return p->value;
-			}
-//			p = p->next;
-//		} while (p != NULL);
+	for (p = table->entry[bucket]; p != NULL; p = p->next) {
+		if (strcmp (node->character, p->key) == 0){
+			return p->value;
+		}
 	}
 	return NULL;	//対応するものが見つからなかったらNULLを返す
 }
@@ -76,5 +60,9 @@ defunした関数を呼び出す時
 
 	＊関数のテーブルはスタックにしない(一意)
 	＊引数はスタック上に保存したいので、引数のテーブルはスタックにする(prevのフィールドを利用する)
+関数を呼び出すと引数をsetqする。
+( defun f ( n m ) ( + n m ) )
+( f 2 3 )
+の場合、defunされた関数名が来たら、引数用hash_tableにnを2にsetqする。mを3にsetqする。そのtableはもともとあるsetq_tableとは別のtableを作る。tableのprevにつなげる。
 */
 
