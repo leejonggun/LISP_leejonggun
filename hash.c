@@ -17,7 +17,7 @@ void hash_set(hash_table_t *table, node_t *key, node_t *value) {	//*key is funct
 	entry->key = (const char*) malloc (sizeof (strlen (key->car->character))+1);
 	strcpy ((char*)entry->key, key->car->character);	// 関数名を entry の key にコピーする。
 	if ( func_call_flag == 1 ) {
-		entry->value = copy_node ( value->car );
+		entry->value = copy_node ( value/*->car*/ );
 	} else {
 		entry->value = copy_node ( value );	// ( x y ) (+ x y)引数のリストをコピーする。
 	}	

@@ -24,7 +24,20 @@ typedef struct hash_table_t {
 		    /* stack */
 		    struct hash_table_t *prev;
 }hash_table_t;
+/*
+typedef struct opline_t {
+	enum op_type type;
+	int op;
+	struct opline_t *next;
+}opline_t;
 
+(+ 1 2 3)
+push 1
+push 2
+push 3
+add
+add
+*/
 //共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
@@ -34,10 +47,12 @@ extern int Comp_flag;			//Distinguish Compare and Calculate
 extern int func_call_flag;
 extern node_t *root;			//indicates '(' node.
 extern node_t *open_node;		//indicates previous list of OPEN node
-extern hash_table_t *setq_table;
-extern hash_table_t *defun_table;
+extern hash_table_t *setq_table;//hash_table for setq function.
+extern hash_table_t *defun_table;//hash_table for defun function.
+extern hash_table_t *tmp_table;//hash_table for temprary use.
 
 //関数定義	共有する関数を定義するときはexternをつける。
+extern void start ();
 extern node_t* tokenize (const char* input);				
 extern void print_node (node_t *node);
 extern void free_node (node_t *node);
@@ -46,4 +61,12 @@ extern int eval (node_t *node);
 extern void hash_set (hash_table_t *table, node_t *key, node_t *value);
 extern node_t *hash_search (hash_table_t *table, node_t *node);
 extern int length_cdr (node_t *first_OpenNode);
+extern int add ( node_t *node );
+extern int sub ( node_t *node );
+extern int mul ( node_t *node );
+extern int dir ( node_t *node );
+extern int smaller ( node_t *node );
+extern int bigger ( node_t *node );
+extern int equal ( node_t *node );
+
 #endif

@@ -23,7 +23,7 @@ node_t* make_list () {	//listを作る。
 }
 
 node_t* tokenize (const char *input) {	
-	while ( input[jindex] == ' ') {		//最初の'('を探す。
+	while ( input[jindex] == ' ' || input[jindex] == '\n' || input[jindex] == '\t') {		//最初の'('を探す。
 		jindex++;
 	}
 		node_t *open_node = (node_t*) malloc (sizeof (node_t) );
@@ -39,7 +39,7 @@ node_t* tokenize (const char *input) {
 			}
 			open_node->cdr = make_list ();
 			open_node = open_node->cdr;
-			while ( input[jindex] == ' ') {
+			while (input[jindex] == ' ' || input[jindex] == '\n' || input[jindex] == '\t') {
 			jindex++;
 			}
 			//CLOSEの前の' 'を読み飛ばす。
@@ -56,7 +56,6 @@ node_t* tokenize (const char *input) {
 	} else if ( input[jindex] == ')') {	//CLOSEエラー処理。
 			printf("CLOSE: Something Wrong.\n");
 				return NULL;
-
 	} else if (47 < input[jindex] && input[jindex] < 58) {		//'(', ')'以外
 		tt = number(input, jindex);
 		open_node = make_node (open_node, tt, length);
@@ -73,7 +72,11 @@ node_t* tokenize (const char *input) {
 		open_node = make_node (open_node, tt, 1);
 //		printf("OPERATOR:open_node->character = '%s'\n", open_node->character);
 		return open_node;
-	}
+	}// else if ( input[jindex] == ' ' || input[jindex] == '\n' ) {
+	
+	//	jindex++;
+
+	//}
 	//上記のどれにも当てはまらなかったらエラー。
 	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string.'\n");
 	return NULL;
@@ -141,7 +144,7 @@ node_t* make_node (node_t *node, enum token_type tt, int token_length){
 		calc[0] = operator_data;
 		calc[1] = '\0';
 		node->character = calc;
-		printf("TODO:make_node in tokenize.c: '<=', '>=', '/='\n");
+		//printf("TODO:make_node in tokenize.c: '<=', '>=', '/='\n");
 //		node->character = &operator_data;//node->character got operator.
 		return node;	
 	} else if (tt == NUMBER) {			//Atom

@@ -3,56 +3,70 @@
 #include <readline/readline.h>
 #include "lisp.h"
 
+typedef struct string_buffer_t {
+	size_t size;//現在のサイズ
+	size_t capacity;//サイズの最大値
+	char *str;//文字列の一文字分
+} string_buffer_t;
 
+string_buffer_t *new_string_buffer() {//新しいstringを作る。new_string_bufferをmallocする。strもmallocする。sizeの初期値は0。
+	string_buffer_t *new_sb = (string_buffer_t*) malloc ( sizeof (string_buffer_t) );
+	new_sb->size = 0;
+	new_sb->capacity = 64;
+	//new_sb->str = (char*) malloc ( sizeof (new_sb->capacity) );
+	new_sb->str = (char*) malloc ( new_sb->capacity );
+	return new_sb;
+}
+void string_buffer_putc(string_buffer_t *sb, char c) {//一文字読み込む。
+//	if ( c == '\n' ) {
+//		sb->str[sb->size] = '\0';
+//		sb->size++;
+//	} else {
+	if (sb->capacity == sb->size) {
+		size_t newcapacity = sb->capacity * 2;
+		char *newstr = (char*) malloc ( newcapacity );
+		memcpy( newstr, sb->str, sb->capacity );
+		free(sb->str);
+		sb->str = newstr;
+		sb->capacity = newcapacity;
+	}
+	sb->str[sb->size] = c;
+	sb->size++;
+//	}
+}
+//char *string_buffer_to_string(string_buffer_t *sb) {//読み込んだ文字を文字列につなげる。
+	
+//}
+void string_buffer_free(string_buffer_t *sb) {//文字列をフリーする。
+	free ( sb->str );
+	free ( sb );
+}
 int main(int argc, char** argv) {
 	char *input = NULL;
-	while((input = readline(">>> "))){
-		int tmp = 0;
-		node_t *root_from_tokenize = NULL;
-		int calc_result = 0;
-		jindex = 0;
-		Comp_flag = 0;
-		func_call_flag = 0;
-		while (tmp != (strlen(input))) {
-			root_from_tokenize = tokenize(input);
-			tmp = jindex;
-			printf("tokenize finished, tmp = '%d'\n", tmp);
-			if ( root_from_tokenize == NULL ) {
-				printf("ERROR in main\n");
-				break;
-			}
+	if ( argc == 2 ) {
+		string_buffer_t *string = new_string_buffer ();
+		int get_ch;
+		char *fname = argv[1];
+		FILE *fp = fopen ( fname, "r" );
+		while( (get_ch = fgetc (fp) ) != EOF) {
+//			if ( get_ch == '\n' ) {
+//				printf("'Enter' has come\n");
+//				input = string->str;
+//				start (input);
+//			} else {
+			string_buffer_putc (string, get_ch);
+//			}
 		}
-	if ( root_from_tokenize != NULL ) {
-		print_node(root_from_tokenize);
-		printf("After print_node(root)\n");
-		calc_result = eval (root_from_tokenize);
-		if ( Comp_flag == 1 ) {
-			switch (calc_result) {
-				case 0:
-					printf("After eval, Comp_flag is occered. comp_result = Nil.\n");
-					break;
-				case 1:
-					printf("After eval, Comp_flag is occered. comp_result = True.\n");
-					break;
-				case -1:
-					printf("After eval, Comp_flag is occered. But, Something wrong\n");
-					break;
-			}
-		} else if ( Comp_flag == 0 ) {
-			if ( calc_result == -1 ) {
-				printf("Something wrong in eval.c\n");
-			} else {
-			printf("After eval, calc_result = '%d'\n",calc_result);
-			}	
-		}	
-	free_node(root_from_tokenize);
-	if ( func_call_flag == 1 ) //関数呼び出しの計算が終わったらフリーする。
-			free(defun_table->prev);
-	printf("After free_node(root)\n");
-	} else {
-			printf("The tokenizer doesn't work. Please debug tokenize.c\n");
-//			return 0;
+//		string_buffer_putc (string, '\0');
+		input = string->str;
+		printf("input = '%s'\n",input);
+		start ( input );
+		string_buffer_free ( string );
+	} else if (argc == 1) {
+		while((input = readline(">>> "))){
+			start ( input );
 		}
 	}
+//	fclose ( fp );
 	return 0;
 }
