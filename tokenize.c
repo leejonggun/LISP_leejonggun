@@ -3,96 +3,88 @@
 #include <stdlib.h>
 #include "lisp.h"
 
-int length = 0;			//The length of string token.
+static int length = 0;			//The length of string token.
 int jindex = 0;			//index
 char *sym_data = NULL;
 char operator_data = 0;
 int num_data = 0;
 enum token_type tt;		//token type
-node_t* tmp_node = NULL;
+node_t *tmp_node = NULL;//消すと遅くなる!信じられない!
 
-enum token_type symbol (const char *string, int last);	//Read string data.
-enum token_type number (const char *string, int first);	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
-enum token_type operator (const char *string, int index);	//Recognize the operator (including Compare operator) and put up tt.
-node_t* make_node (node_t *node, enum token_type tt, int token_length);
+static enum token_type symbol (const char *string, int last);	//Read string data.
+static enum token_type number (const char *string, int last);	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
+static enum token_type operator (const char *string, int index);	//Recognize the operator (including Compare operator) and put up tt.
+static node_t* make_node (node_t *node, enum token_type tt);
 
-node_t* make_list () {	//listを作る。
+static node_t* make_list () {	//listを作る。
 	node_t *list = (node_t*) malloc (sizeof (node_t) );
 	list->tt = OPEN;
 	return list;
 }
 
 node_t* tokenize (const char *input) {	
-	while ( input[jindex] == ' ' || input[jindex] == '\n' || input[jindex] == '\t') {		//最初の'('を探す。
+	while ( input[jindex] == ' ' || input[jindex] == '\n' || input[jindex] == '\t') {
 		jindex++;
 	}
 		node_t *open_node = (node_t*) malloc (sizeof (node_t) );
 	if (input[jindex] == '(') {		//'('～')'まで
 		node_t *root = open_node;
 		open_node->tt = OPEN;
-//		printf("OPEN:root, root->tt ='%p', '%d'\n",open_node, open_node->tt);
 		jindex++;	//OPEN nodeを読んだ後、次の文字から読むためにindexを進める
 		while ( input[jindex] != ')') {
 			open_node->car = tokenize (input);
 			if ( open_node->car == NULL ) {
+				printf("You need more token.\n");
 				return NULL;
 			}
-			open_node->cdr = make_list ();
-			open_node = open_node->cdr;
+			open_node->cdr = make_list ();//*cdrに新しいnodeをつなげる
+			open_node = open_node->cdr;//*cdrをopen_nodeにして、*carに次のトークンをつなげる。
 			while (input[jindex] == ' ' || input[jindex] == '\n' || input[jindex] == '\t') {
 			jindex++;
 			}
 			//CLOSEの前の' 'を読み飛ばす。
+
 		}
 		//CLOSEが正常に来た場合:OPEN nodeの返す。
 		tt = CLOSE;
-		//open_node->car = NULL;
-		//open_node->cdr = NULL;
-		open_node = make_node ( open_node, tt, 1);
+		open_node = make_node ( open_node, tt);
 		jindex++;
-//		printf("CLOSE;root, root->tt ='%p', '%d'\n",root, root->tt);
 		return root;
 		
-	} else if ( input[jindex] == ')') {	//CLOSEエラー処理。
-			printf("CLOSE: Something Wrong.\n");
-				return NULL;
-	} else if (47 < input[jindex] && input[jindex] < 58) {		//'(', ')'以外
+	} else if ( input[jindex] == ')') {	//ここにCLOSEが来た場合、エラー処理。
+		free (open_node);
+		printf("CLOSE: Something Wrong.\n");
+		return NULL;
+	} else if (47 < input[jindex] && input[jindex] < 58) {
 		tt = number(input, jindex);
-		open_node = make_node (open_node, tt, length);
-//		printf("NUMBER:open_node->number = '%d'\n",open_node->number);
+		open_node = make_node (open_node, tt);
 		return open_node;
 	} else if ((64 < input[jindex] && input[jindex] < 91) || (96 < input[jindex] && input[jindex] < 123)){
 		tt = symbol (input, jindex);
-		open_node = make_node (open_node, tt, length);
+		open_node = make_node (open_node, tt);
 		free (sym_data);
-//		printf("SYMBOL:open_node->character = '%s'\n", open_node->character);
 		return open_node;
 	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' || input[jindex] == '<' || input[jindex] == '>' || input[jindex] == '=' ) {	//to do '<=', '>=', '/='
 		tt = operator (input, jindex);
-		open_node = make_node (open_node, tt, 1);
-//		printf("OPERATOR:open_node->character = '%s'\n", open_node->character);
+		open_node = make_node (open_node, tt);
 		return open_node;
-	}// else if ( input[jindex] == ' ' || input[jindex] == '\n' ) {
-	
-	//	jindex++;
-
-	//}
+	}
 	//上記のどれにも当てはまらなかったらエラー。
 	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string.'\n");
 	return NULL;
 }
 
-enum token_type symbol(const char *string, int last){	//Read string data.
+static enum token_type symbol(const char *string, int last) {	//Read string data.
 	int first = last;
 	int i = 0, j = 0;	//character for loop
-	while((64 < string[last+1] && string[last+1] < 91) || (96 < string[last+1] && string[last+1] < 123)){
+	while ( (64 < string[last+1] && string[last+1] < 91) || (96 < string[last+1] && string[last+1] < 123) ) {
 					last++;
 	}
 	jindex = last;
-	length = last - first+1;
-	sym_data = (char*)malloc(sizeof(length+1));//文字数+1分メモリーを確保する。
+	length = last - first + 1;
+	sym_data = (char*) malloc (length + 1);//文字数+1分メモリーを確保する。
 	j = 0;
-	for(i = first; i <= last; i++){
+	for(i = first; i <= last; i++) {
 	sym_data[j] = string[i];		
 	j++;
 	}
@@ -101,20 +93,20 @@ enum token_type symbol(const char *string, int last){	//Read string data.
 	return SYMBOL;
 }
 
-enum token_type number(const char *string, int first){	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
-	int last = first;
-	int num_token = string[last]-48;	//最初の数字
-	while(47 < string[last+1] && string[last+1] < 58){
-		num_token = num_token * 10 + (string[last+1]-48);
+static enum token_type number(const char *string, int last) {	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
+	int first = last;
+	int num_token = string[last] - 48;	//最初の数字
+	while(47 < string[last + 1] && string[last + 1] < 58) {
+		num_token = num_token * 10 + (string[last+1] - 48);
 		last++;
 	}
-	jindex = last+1;			//最後の数字のindexを覚える。
+	jindex = last + 1;			//最後の数字の次のindexを覚える。
 	length = last - first;
 	num_data = num_token;
 	return NUMBER;
 }
 
-enum token_type operator(const char *string, int index){	//Recognize the operator(including comparison) and put up tt.
+static enum token_type operator(const char *string, int index) {	//Recognize the operator(including comparison) and put up tt.
 	operator_data = string[index];
 	switch(operator_data){
 		case '+':
@@ -136,7 +128,7 @@ enum token_type operator(const char *string, int index){	//Recognize the operato
 	}
 }
 
-node_t* make_node (node_t *node, enum token_type tt, int token_length){
+static node_t* make_node (node_t *node, enum token_type tt) {
 	node->tt = tt;
 	if (tt == OPERATOR || tt == COMP) {		//Atom_node
 		node->cdr = NULL;
@@ -153,14 +145,14 @@ node_t* make_node (node_t *node, enum token_type tt, int token_length){
 		return node;
 	} else if (tt == SYMBOL) {			//Call Atom function
 		node->cdr = NULL;
-		node->character = (char*)malloc(sizeof(token_length));	//j means sym_data's length.
-		int i = 0;
-		for (i = 0; i <= token_length; i++) {			// copy sym_data.
-		node->character[i] = sym_data[i];
+		node->character = (char*)malloc(sizeof(length));
+		int i;
+		for (i =0; i <= length; i++) {
+			node->character[i] = sym_data[i];
 		}
+		//strcpy (node->character, sym_data);
 		return node;
 	} else if (tt == CLOSE ) {
-		//node->tt = CLOSE;
 		node->car = NULL;
 		node->cdr = NULL;
 		return node;

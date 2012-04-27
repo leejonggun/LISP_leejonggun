@@ -13,12 +13,13 @@ int equal ( node_t *node );
 
 int add ( node_t *node ) {
 	int tmp_number = 0;
-	//	ここでevalを呼ぶ。CLOSEまでwhileでループする。
 	int add_result = 0;
+	//最初の引数(最初の数字)を設定。
 	if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 	add_result = eval ( node->car );
 	node = node->cdr;
 	}
+	//	ここでevalを呼ぶ。CLOSEまでwhileでループする。
 	while ( node->tt != CLOSE ) {
 		if ( node->car->tt == NUMBER || node->car->tt == OPEN || node->car->tt == SYMBOL) {
 			tmp_number = eval ( node->car );
@@ -26,8 +27,7 @@ int add ( node_t *node ) {
 			printf("ERROR: add in eval.c\n");
 			return (-1);
 		}
-		add_result += tmp_number;	//add_result = add_result + tmp_number;
-//		printf("in add: add_result = '%d', tmp_number = '%d'\n",add_result,tmp_number);
+		add_result += tmp_number;
 		node = node->cdr;
 	}
 	return add_result;
@@ -46,7 +46,7 @@ int sub ( node_t *node ) {
 			printf("ERROR: sub in eval.c\n");
 			return (-1);
 		}
-		sub_result -=  tmp_number;	//sub_result = sub_result - tmp_number;
+		sub_result -=  tmp_number;
 		node = node->cdr;
 	}
 	return sub_result;	
@@ -65,7 +65,7 @@ int mul ( node_t *node ) {
 			printf("ERROR: mul in eval.c\n");
 			return (-1);
 		}
-		mul_result *= tmp_number;	//mul_result = mul_result * tmp_number;
+		mul_result *= tmp_number;
 		node = node->cdr;
 	}
 	return mul_result;
@@ -84,7 +84,7 @@ int dir ( node_t *node ) {
 			printf("ERROR: dir in eval.c\n");
 			return (-1);
 		}
-		dir_result /= tmp_number;	//dir_result = sub_result / tmp_number;
+		dir_result /= tmp_number;
 		node = node->cdr;
 	}
 	return dir_result;
@@ -119,7 +119,6 @@ int smaller ( node_t *node ) {
 		}
 		node = node->cdr;
 	}
-	//printf("in smaller:first_number'%d'<tmp_number'%d'\n",first_number,tmp_number);
 	return comp_result;
 }
 int bigger ( node_t *node ) {
@@ -184,4 +183,3 @@ int equal ( node_t *node ) {
 	}
 	return comp_result;
 }
-

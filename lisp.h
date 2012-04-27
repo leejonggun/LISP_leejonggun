@@ -24,13 +24,14 @@ typedef struct hash_table_t {
 		    /* stack */
 		    struct hash_table_t *prev;
 }hash_table_t;
-/*
+
+enum op_type {PUSH, POP, ADD};
 typedef struct opline_t {
 	enum op_type type;
 	int op;
 	struct opline_t *next;
 }opline_t;
-
+/*
 (+ 1 2 3)
 push 1
 push 2
@@ -43,16 +44,18 @@ extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
 extern int num_data;			//number token.
 extern int jindex;				//string index.
-extern int Comp_flag;			//Distinguish Compare and Calculate
-extern int func_call_flag;
 extern node_t *root;			//indicates '(' node.
 extern node_t *open_node;		//indicates previous list of OPEN node
+extern int Comp_flag;			//Distinguish Compare and Calculate
+extern int func_call_flag;
+extern int quit_flag;
 extern hash_table_t *setq_table;//hash_table for setq function.
 extern hash_table_t *defun_table;//hash_table for defun function.
 extern hash_table_t *tmp_table;//hash_table for temprary use.
+extern opline_t *vm_top;
 
 //関数定義	共有する関数を定義するときはexternをつける。
-extern void start ();
+extern void start (const char *input);
 extern node_t* tokenize (const char* input);				
 extern void print_node (node_t *node);
 extern void free_node (node_t *node);
@@ -68,5 +71,5 @@ extern int dir ( node_t *node );
 extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
-
+extern opline_t *make_vm ( node_t *node ); 
 #endif

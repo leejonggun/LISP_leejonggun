@@ -13,15 +13,10 @@ string_buffer_t *new_string_buffer() {//新しいstringを作る。new_string_bu
 	string_buffer_t *new_sb = (string_buffer_t*) malloc ( sizeof (string_buffer_t) );
 	new_sb->size = 0;
 	new_sb->capacity = 64;
-	//new_sb->str = (char*) malloc ( sizeof (new_sb->capacity) );
 	new_sb->str = (char*) malloc ( new_sb->capacity );
 	return new_sb;
 }
 void string_buffer_putc(string_buffer_t *sb, char c) {//一文字読み込む。
-//	if ( c == '\n' ) {
-//		sb->str[sb->size] = '\0';
-//		sb->size++;
-//	} else {
 	if (sb->capacity == sb->size) {
 		size_t newcapacity = sb->capacity * 2;
 		char *newstr = (char*) malloc ( newcapacity );
@@ -32,11 +27,7 @@ void string_buffer_putc(string_buffer_t *sb, char c) {//一文字読み込む。
 	}
 	sb->str[sb->size] = c;
 	sb->size++;
-//	}
 }
-//char *string_buffer_to_string(string_buffer_t *sb) {//読み込んだ文字を文字列につなげる。
-	
-//}
 void string_buffer_free(string_buffer_t *sb) {//文字列をフリーする。
 	free ( sb->str );
 	free ( sb );
@@ -49,24 +40,23 @@ int main(int argc, char** argv) {
 		char *fname = argv[1];
 		FILE *fp = fopen ( fname, "r" );
 		while( (get_ch = fgetc (fp) ) != EOF) {
-//			if ( get_ch == '\n' ) {
-//				printf("'Enter' has come\n");
-//				input = string->str;
-//				start (input);
-//			} else {
 			string_buffer_putc (string, get_ch);
-//			}
 		}
-//		string_buffer_putc (string, '\0');
 		input = string->str;
 		printf("input = '%s'\n",input);
 		start ( input );
 		string_buffer_free ( string );
+		fclose ( fp );
 	} else if (argc == 1) {
 		while((input = readline(">>> "))){
 			start ( input );
+			if (quit_flag) {
+				printf("bye.\n");
+				break;
+			}
 		}
+		free (defun_table);
+		free (setq_table);
 	}
-//	fclose ( fp );
 	return 0;
 }

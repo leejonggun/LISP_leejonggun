@@ -15,12 +15,10 @@ void free_node(node_t *node){
 			if(node->cdr != NULL){
 				free_node(node->cdr);
 			}else if(node->cdr == NULL){
-				printf("Something wrong.Please check make_node");
+				printf("Something wrong.Please check make_node\n");
 				break;
 			}
 			free(node);
-//			printf("IN free_node node, node->car ='%p, %p'\n",node,node->car);
-//			printf("Free_node:sym_data ='%p'\n",sym_data);
 			break;
 		case CLOSE:
 			free(node);
@@ -31,7 +29,6 @@ void free_node(node_t *node){
 			break;
 		case NUMBER:
 			free(node);
-//			printf("IN free_node:node->number = '%d'\n",node->number);
 			break;
 		case SYMBOL:
 			free(node->character);
@@ -42,7 +39,7 @@ void free_node(node_t *node){
 			free(node);
 			break;
 		default:
-			printf("ERROR in free_node: exception occured.");
+			printf("ERROR in free_node: exception occured.\n");
 			break;
 	}
 }
