@@ -13,6 +13,7 @@ typedef struct node_t{			//Make tree construction
 	};
 	struct node_t *cdr;			//To List. *cdr in Atom is NULL. Only has List *cdr.
 } node_t;
+
 typedef struct hash_entry_t {
 	    const char *key;
 		    node_t *value;
@@ -25,7 +26,7 @@ typedef struct hash_table_t {
 		    struct hash_table_t *prev;
 }hash_table_t;
 
-enum op_type {PUSH, POP, ADD};
+enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL};
 typedef struct opline_t {
 	enum op_type type;
 	union {
@@ -37,6 +38,7 @@ typedef struct opline_t {
 		struct opline_t *op_F;
 	};
 }opline_t;
+
 //共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
@@ -60,7 +62,6 @@ extern node_t *copy_node (node_t *node);
 extern int eval (node_t *node);
 extern void hash_set (hash_table_t *table, node_t *key, node_t *value);
 extern node_t *hash_search (hash_table_t *table, node_t *node);
-extern int length_cdr (node_t *first_OpenNode);
 extern int add ( node_t *node );
 extern int sub ( node_t *node );
 extern int mul ( node_t *node );

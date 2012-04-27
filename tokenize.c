@@ -9,7 +9,6 @@ char *sym_data = NULL;
 char operator_data = 0;
 int num_data = 0;
 enum token_type tt;		//token type
-node_t *tmp_node = NULL;//消すと遅くなる!信じられない!
 
 static enum token_type symbol (const char *string, int last);	//Read string data.
 static enum token_type number (const char *string, int last);	//number関数は読み込んだ数字の最初を渡して、enum ttのnumberへ格納する
@@ -70,7 +69,7 @@ node_t* tokenize (const char *input) {
 		return open_node;
 	}
 	//上記のどれにも当てはまらなかったらエラー。
-	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string.'\n");
+	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string. You may forgotten to input ')'.'\n");
 	return NULL;
 }
 
@@ -137,7 +136,6 @@ static node_t* make_node (node_t *node, enum token_type tt) {
 		calc[1] = '\0';
 		node->character = calc;
 		//printf("TODO:make_node in tokenize.c: '<=', '>=', '/='\n");
-//		node->character = &operator_data;//node->character got operator.
 		return node;	
 	} else if (tt == NUMBER) {			//Atom
 		node->cdr = NULL;			//Atom has no cdr.
@@ -150,7 +148,6 @@ static node_t* make_node (node_t *node, enum token_type tt) {
 		for (i =0; i <= length; i++) {
 			node->character[i] = sym_data[i];
 		}
-		//strcpy (node->character, sym_data);
 		return node;
 	} else if (tt == CLOSE ) {
 		node->car = NULL;

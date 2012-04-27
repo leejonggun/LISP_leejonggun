@@ -11,7 +11,16 @@ int func_call_flag = 0;
 int quit_flag = 0;
 
 static int func_if ( node_t *node);
-int length_cdr (node_t *first_OpenNode) {//トークンのcdrの数を調べる。文法チェックに用いる。
+static int string_cmp (node_t *node, char *string) {	//文字列の比較
+	int i;
+	for ( i = 0; i < (strlen (node->character)) ; i++ ) {
+		if ( string[i] != node->character[i]) {
+			return 1;
+		}
+	}
+	return 0;
+}
+static int length_cdr (node_t *first_OpenNode) {//トークンのcdrの数を調べる。文法チェックに用いる。
 	int length = 0;
 	while ( first_OpenNode->tt != CLOSE ) {
 		length++;
@@ -54,14 +63,14 @@ int eval ( node_t *node ) {
 			/*文字列が来たら、関数を探す。*/
 		}else if (node->car->tt == SYMBOL) {
 			/* if文 */
-			if ( strcmp (node->car->character, "if" ) == 0 ) {
+			if ( string_cmp (node->car, "if" ) == 0 ) {
 				if ( length_cdr ( node ) != 4 ) {
 					printf("ERROR:func_if in eval.c: SyntaxError.( if (x) arg1 arg2 )\n");
 					return (-1);
 				}
 				return func_if (node->cdr);
 			/*setq文*/
-			} else if ( strcmp ( node->car->character, "setq" ) == 0 ) {
+			} else if ( string_cmp ( node->car, "setq" ) == 0 ) {
 				if ( length_cdr ( node ) != 3 ) {
 					printf("ERROR:setq in eval.c: SyntaxError.( setq x arg1 )\n");
 					return (-1);
@@ -76,11 +85,12 @@ int eval ( node_t *node ) {
 				tmp_setq->tt = NUMBER;
 				tmp_setq->cdr = NULL;
 				hash_set ( setq_table, node->cdr, tmp_setq );//hash tableのどこかに格納。
+				int tmp_num = tmp_setq->number;
 				free(tmp_setq);
-				printf("log: SUCCESS to set setq_hash_table.'%d'\n", (hash_search(setq_table, node->cdr->car))->number);
-				return 0;
+				printf("log: SUCCESS to set setq_hash_table.\n");
+				return tmp_num;
 			/*defun文*/
-			} else if (strcmp ( node->car->character, "defun") == 0 ) {
+			} else if (string_cmp ( node->car, "defun") == 0 ) {
 				if ( length_cdr ( node ) != 4 ) {
 					printf("ERROR:defun in eval.c: SyntaxError.( defun name (args) (expression)\n");
 					return (-1);
@@ -92,8 +102,8 @@ int eval ( node_t *node ) {
 				hash_set ( defun_table, node->cdr, node->cdr->cdr );//hash tableのどこかに格納。
 				printf("log: SUCCESS to set defun_hash_table\n");
 				return 0;
-			/* to do: quit文を作成する.*/
-			} else if (strcmp ( node->car->character, "quit") == 0) {
+			/*quit文*/
+			} else if (string_cmp ( node->car, "quit") == 0) {
 				if ( length_cdr ( node ) != 1 )	{
 					printf("ERROR:quit in eval.c: SyntaxError.( quit ) has no argment.");
 					return (-1);
@@ -108,10 +118,9 @@ int eval ( node_t *node ) {
 				return 0;
 			/* 関数呼び出し。( f 2 3 )が渡されたとき。*/
 			} else {
-				if ( setq_table != NULL || defun_table != NULL ) {
+				if ( defun_table != NULL ) {
 					node_t *func_value = hash_search(defun_table, node->car);//defun_table中に関数名(node->car->character)があるかどうか判断。
 					if ( func_value != NULL ) {//defun_tableに対応する関数があったら、
-						
 						//func_argsは defun f ( n m ) ( + n m )の最初のOPENを指す。二番目のOPENはfunc_value->cdr->car.
 						node_t *func_args = func_value->car;
 						node_t *args_given = node->cdr;
@@ -129,7 +138,7 @@ int eval ( node_t *node ) {
 							tmp_args->tt = NUMBER;
 							tmp_args->cdr = NULL;
 							tmp_args->number = eval ( args_given );	
-							if (tmp_args->number == 1/* || tmp_args->number == 0*/) {
+							if (tmp_args->number == 1 || tmp_args->number == 2) {//ここが if (tmp_args->number == 1) なら2秒ほど遅くなる。
 								return 1;//fib(1)の場合。fib(2)の場合はfunc_ifで処理する。
 							}
 							hash_set (defun_table->prev, func_args, tmp_args);	//defun_table->prevは関数の引き数用のhash_table.
@@ -153,7 +162,6 @@ int eval ( node_t *node ) {
 					} else {	//defun_tableに対応する関数がなかったら、それは変数。
 							if ( tmp_table != NULL ) {
 								node_t *args_value = hash_search ( tmp_table, node->car );
-								//printf("args_value->number='%d'\n", args_value->number);
 								return eval ( args_value );
 							}
 						printf("You don't define function1'%s'\n", node->car->character);
@@ -185,8 +193,7 @@ int eval ( node_t *node ) {
 							printf("You don't define the function3'%s'.\n",node->character);	
 								return (-1);
 						} else {//tmp_tableに対応する変数があったら処理をする。
-							int defun_result = eval ( defun_node );
-							return defun_result;
+							return eval ( defun_node );
 						}
 					} else {
 					printf("You don't define the variable'%s'.\n",node->character);
@@ -226,7 +233,7 @@ static int func_if ( node_t *node ) {
 	} else if ( node->car->character[0] == 't' || node->car->character[0] == 'T' || node->car->number == 1) { //条件式がなく、真( = true )が渡された場合
 		comp_result = 1;
 		run_number = eval ( node->cdr->car );
-	} else if ( strcmp (node->car->character, "Nil") == 0 || node->car->number == 0) { //条件式がなく、偽( = false )が渡された場合
+	} else if ( string_cmp (node->car, "Nil") == 0 || node->car->number == 0) { //条件式がなく、偽( = false )が渡された場合
 		comp_result = 0;
 		run_number = eval ( node->cdr->cdr->car );
 	} else {

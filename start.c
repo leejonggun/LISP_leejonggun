@@ -3,7 +3,7 @@
 #include <readline/readline.h>
 #include "lisp.h"
 
-char *type_name[] = { "PUSH", "POP", "ADD" };
+char *type_name[] = {"PUSH", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL"};
 void start (const char *input) {
 	int tmp = 0;
 	node_t *root_from_tokenize = NULL;
@@ -29,6 +29,7 @@ void start (const char *input) {
 			}
 			break;
 			/*vm生成部分*/
+
 			//print_node(root_from_tokenize);
 			calc_result = eval (root_from_tokenize);
 			if ( func_call_flag ) {
