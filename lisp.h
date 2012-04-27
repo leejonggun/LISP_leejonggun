@@ -28,17 +28,15 @@ typedef struct hash_table_t {
 enum op_type {PUSH, POP, ADD};
 typedef struct opline_t {
 	enum op_type type;
-	int op;
-	struct opline_t *next;
+	union {
+		int op;
+		struct opline_t *op_T;
+	};
+	union {
+		struct opline_t *next;
+		struct opline_t *op_F;
+	};
 }opline_t;
-/*
-(+ 1 2 3)
-push 1
-push 2
-push 3
-add
-add
-*/
 //共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
@@ -52,7 +50,6 @@ extern int quit_flag;
 extern hash_table_t *setq_table;//hash_table for setq function.
 extern hash_table_t *defun_table;//hash_table for defun function.
 extern hash_table_t *tmp_table;//hash_table for temprary use.
-extern opline_t *vm_top;
 
 //関数定義	共有する関数を定義するときはexternをつける。
 extern void start (const char *input);
@@ -71,5 +68,5 @@ extern int dir ( node_t *node );
 extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
-extern opline_t *make_vm ( node_t *node ); 
+extern opline_t *codegen ( node_t *node ); 
 #endif

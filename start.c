@@ -11,7 +11,6 @@ void start (const char *input) {
 	jindex = 0;
 	Comp_flag = 0;
 	func_call_flag = 0;
-	vm_top = NULL;//the root of cons tree.
 	while (tmp != (strlen(input))) {
 		root_from_tokenize = tokenize(input);
 		tmp = jindex;
@@ -23,7 +22,7 @@ void start (const char *input) {
 		if ( root_from_tokenize != NULL ) {
 
 			/*vm生成部分*/
-			opline_t *opline = make_vm (root_from_tokenize);
+			opline_t *opline = codegen (root_from_tokenize);
 			while ( opline != NULL ) {
 			printf("opline->op, opline->type = '%d, %s'\n",opline->op, type_name[opline->type]);
 			opline = opline->next;
