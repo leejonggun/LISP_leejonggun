@@ -37,24 +37,26 @@ opline_t *codegen ( node_t *node ) {
 	node_t *vm_root = node;//The root->car has some function.
 	node_t *vm_open = node;//The OPEN parenthesis.
 	opline_t *vm_top = NULL;//the root of cons tree.
+	opline_t *vm_chain = NULL;
 	while (vm_open->tt != CLOSE) {
 		if (vm_open->car->tt == OPERATOR || vm_open->car->tt == COMP ) {//演算子が来た場合。分岐の仕方->演算子が来たら次のトークン(数字)を読む。それからは数字と演算子をセットで考える。
-			//最初の*carの場合。
+			//最初の*carの場合。(最初に括弧が来ても計算対応)
 			vm_open = vm_open->cdr;//演算子を飛ばして最初の引数(数字)から読む。
-			vm_top = func_push (vm_open);
-			opline_t *vm_chain = vm_top;
-			printf("log1: vm_top->op ='%d'\n",vm_top->op);
+			vm_top = type_divari (vm_open);
+			vm_chain = vm_top;
+			while (vm_chain->next != NULL) {//入れ子になっている場合、最後の命令に進める。その続きから命令をつなげる。
+				vm_chain = vm_chain->next;
+			}
 			vm_open = vm_open->cdr;
 			while (vm_open->tt != CLOSE) {
 				vm_chain->next = type_divari (vm_open);
 				while (vm_chain->next != NULL) {//入れ子になっている場合、最後の命令に進める。その続きから命令をつなげる。
 					vm_chain = vm_chain->next;
 				}
-				printf("log2: vm_chain->op ='%d'\n",vm_chain->op);
-				if ( vm_open->cdr != NULL ) {
+				if ( vm_open->cdr != NULL ) {//演算子命令を挿入。
 					vm_chain->next = type_divari (vm_root);
 					vm_chain = vm_chain->next;
-			}
+				}
 				vm_open = vm_open->cdr;
 			}
 		} else if (vm_open->car->tt == SYMBOL) {
@@ -68,20 +70,12 @@ opline_t *codegen ( node_t *node ) {
 				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
 					vm_chain = vm_chain->next;
 				}
-				/*条件式が真の時の命令*/
+				/*TODO:上の比較結果を受付て分岐するIFが必要。*/
 				opline_t *condition = type_divari (vm_root);//conditionはop_Tとop_F(条件式が真の場合と偽の場合に実行される命令)を持っている。
-				vm_chain->next = condition->op_T;
-				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
-					vm_chain = vm_chain->next;
-				}
-				vm_chain->next = func_end ();
-				vm_chain = vm_chain->next;
+				vm_chain->next = condition;
+				/*条件式が真の時の命令*/
 				/*条件式が偽の時の命令*/
-				vm_chain->next = condition->op_F;
-				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
-					vm_chain = vm_chain->next;
-				}
-				vm_chain->next = func_end ();
+				//上はそれぞれfunc_ifの中で命令列を作る。
 				/*if文終わり*/
 				return vm_top;
 			}
@@ -223,8 +217,23 @@ static opline_t* func_if ( node_t *node ) {
 	if_vm->type = IF;
 	node_t *T_node = node->cdr->cdr;
 	if_vm->op_T = type_divari (T_node);
+
+	opline_t *tmp_vm = if_vm->op_T;//Make tmp_vm
+	while (tmp_vm->next != NULL) {
+		tmp_vm = tmp_vm->next;
+	}
+	tmp_vm->next = func_end ();
+	tmp_vm = tmp_vm->next;//tmp_vm->type is "END".
+
 	node_t *F_node = node->cdr->cdr->cdr;
 	if_vm->op_F = type_divari (F_node);
+	
+	tmp_vm->next = if_vm->op_F;// After "END", op_F has come.
+	while (tmp_vm->next != NULL) {
+		tmp_vm = tmp_vm->next;
+	}
+	tmp_vm->next = func_end ();
+
 	return if_vm;
 }
 static opline_t* func_end () {

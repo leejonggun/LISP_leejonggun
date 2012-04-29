@@ -69,7 +69,7 @@ node_t* tokenize (const char *input) {
 		return open_node;
 	}
 	//上記のどれにも当てはまらなかったらエラー。
-	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string. You may forgotten to input ')'.'\n");
+	printf("ERROR: Please input '(', ')', '+', '*', '-', '/', '<', '>', '=', 'number' or 'string. You may forget to input ')'.'\n");
 	return NULL;
 }
 

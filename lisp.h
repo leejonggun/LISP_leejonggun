@@ -26,18 +26,18 @@ typedef struct hash_table_t {
 		    struct hash_table_t *prev;
 }hash_table_t;
 
-//enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
-//typedef struct opline_t {
-//	enum op_type type;
-//	union {
-//		int op;
-//		struct opline_t *op_T;
-//	};
-//	union {
-//		struct opline_t *next;
-//		struct opline_t *op_F;
-//	};
-//}opline_t;
+enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
+typedef struct opline_t {
+	enum op_type type;
+	union {
+		int op;
+		struct opline_t *op_T;
+	};
+	union {
+		struct opline_t *next;
+		struct opline_t *op_F;
+	};
+}opline_t;
 
 //共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.
@@ -70,5 +70,5 @@ extern int dir ( node_t *node );
 extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
-//extern opline_t *codegen ( node_t *node ); 
+extern opline_t *codegen ( node_t *node ); 
 #endif
