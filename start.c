@@ -22,19 +22,23 @@ void start (const char *input) {
 		if ( root_from_tokenize != NULL ) {
 
 			/*vm生成部分*/
-			opline_t *opline = codegen (root_from_tokenize);
-			while ( opline != NULL ) {
-				if (opline->type == IF ) {
-					printf("opline->op, opline->type = '%d, %s' has op_T'%d' and op_F'%d'.\n",opline->op, type_name[opline->type],opline->op_T->op,opline->op_F->op);
-					opline = opline->op_T;//op_Tもop_Fもちゃんとある。op_Tの"END"にop_Fをつないだ。
+			opline_t *check_opline = codegen (root_from_tokenize);
+			opline_t *opline = check_opline;
+			while ( check_opline != NULL ) {
+				if (check_opline->type == IF ) {
+					printf("check_opline->op, check_opline->type = '%d, %s' has op_T'%d' and op_F'%d'.\n",check_opline->op, type_name[check_opline->type],check_opline->op_T->op,check_opline->op_F->op);
+					check_opline = check_opline->op_T;//op_Tもop_Fもちゃんとある。op_Tの"END"にop_Fをつないだ。
 				} else {
-					printf("opline->op, opline->type = '%d, %s'\n",opline->op, type_name[opline->type]);
-					opline = opline->next;
+					printf("check_opline->op, check_opline->type = '%d, %s'\n",check_opline->op, type_name[check_opline->type]);
+					check_opline = check_opline->next;
 				}
 			}
-			break;
 			/*vm生成部分*/
-
+			/*vm実行部分(oplineが命令列のトップ)*/
+			opline_t *run_opline = vm_run (opline);
+			printf("the result is run_opline->op ='%d'\n",run_opline->op);
+			/*vm実行部分*/
+			break;
 			//print_node(root_from_tokenize);
 			calc_result = eval (root_from_tokenize);
 			if ( func_call_flag ) {

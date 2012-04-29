@@ -63,7 +63,7 @@ node_t* tokenize (const char *input) {
 		open_node = make_node (open_node, tt);
 		free (sym_data);
 		return open_node;
-	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' || input[jindex] == '<' || input[jindex] == '>' || input[jindex] == '=' ) {	//to do '<=', '>=', '/='
+	} else if ( input[jindex] == '+' || input[jindex] == '*' || input[jindex] == '-' || input[jindex] == '/' || input[jindex] == '<' || input[jindex] == '>' || input[jindex] == '=' ) {	//TODO '<=', '>='
 		tt = operator (input, jindex);
 		open_node = make_node (open_node, tt);
 		return open_node;

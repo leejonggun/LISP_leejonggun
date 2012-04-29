@@ -19,7 +19,6 @@ typedef struct opline_t {
 //enum op_type type = { PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
 node_t *vm_open = NULL;
 static opline_t* func_new ();
-void free_vm ( opline_t *vm ); 
 static opline_t* type_divari ( node_t *node );
 static opline_t* func_smaller ( node_t *node );
 static opline_t* func_bigger ( node_t *node );
@@ -61,16 +60,14 @@ opline_t *codegen ( node_t *node ) {
 			}
 		} else if (vm_open->car->tt == SYMBOL) {
 			char *vm_func = vm_open->car->character;
-			/*if文*/			
-			if ( strcmp (vm_func, "if") == 0) {
+			/*if文(if (cond) (op_T) (op_F))*/			
+			if (strcmp (vm_func, "if") == 0) {
 				vm_open = vm_open->cdr;
-				/*条件式*/
 				vm_top = type_divari (vm_open);//条件式をvm_topにPUSHする。
 				opline_t *vm_chain = vm_top;
 				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
 					vm_chain = vm_chain->next;
 				}
-				/*TODO:上の比較結果を受付て分岐するIFが必要。*/
 				opline_t *condition = type_divari (vm_root);//conditionはop_Tとop_F(条件式が真の場合と偽の場合に実行される命令)を持っている。
 				vm_chain->next = condition;
 				/*条件式が真の時の命令*/
@@ -78,7 +75,22 @@ opline_t *codegen ( node_t *node ) {
 				//上はそれぞれfunc_ifの中で命令列を作る。
 				/*if文終わり*/
 				return vm_top;
+			/*TODO defun文(defun func_name (args) (function))*/
+			} else if (strcmp (vm_func, "defun") == 0) {
+				node_t *func_name = vm_open->cdr;
+				node_t *func = vm_open->cdr->cdr;
+				if (defun_table == NULL) {
+					defun_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
+					defun_table->prev = (hash_table_t*) malloc (sizeof (hash_table_t) );
+				}
+				hash_set (defun_table, func_name, func);
+				printf("log: SUCCESS to set defun_hash_table\n");
+				return NULL; 
+			} else {//今の場合、エラー処理。
+				printf("You don't define the function.\n");
+				return NULL;
 			}
+
 		} else {//今の場合、エラー処理。
 			printf("This is not good....\n");
 			return NULL;
@@ -96,12 +108,8 @@ static opline_t* func_new () {
 	func_new->next = NULL;
 	return func_new;
 }
-//opline_tをフリーする。
-void free_vm ( opline_t *vm ) {
-	free( vm );
-}
 //node_tのtt (OPEN, CLOSE, NUMBER, SYMBOL, COMP)を受け付ける関数。
-opline_t* type_divari ( node_t *node ) {
+static opline_t* type_divari ( node_t *node ) {
 	opline_t *func_result = NULL;
 	switch (node->car->tt) {
 		case OPEN:

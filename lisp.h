@@ -71,4 +71,5 @@ extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
 extern opline_t *codegen ( node_t *node ); 
+extern opline_t *vm_run ( opline_t *opline );
 #endif
