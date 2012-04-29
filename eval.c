@@ -10,8 +10,12 @@ int Comp_flag = 0;
 int func_call_flag = 0;
 int quit_flag = 0;
 
+static int func_quit ();
+static int func_setq ( node_t *node );
 static int func_if ( node_t *node);
-static int string_cmp (node_t *node, char *string) {	//文字列の比較
+static int fib_call ( node_t *node, node_t *func_value );
+static int func_call ( node_t *node, node_t *func_value );
+int string_cmp (node_t *node, char *string) {	//文字列の比較
 	int i;
 	for ( i = 0; i < (strlen (node->character)) ; i++ ) {
 		if ( string[i] != node->character[i]) {
@@ -75,20 +79,7 @@ int eval ( node_t *node ) {
 					printf("ERROR:setq in eval.c: SyntaxError.( setq x arg1 )\n");
 					return (-1);
 				}
-				if ( setq_table == NULL ) {//最初に呼ばれたときだけmallocする。
-					setq_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
-				}
-				//対応するものがtableにないなら格納可能。
-				//対応するものがtableにある。table->entry[bucket]->nextにpushする。
-				node_t *tmp_setq = (node_t*) malloc (sizeof (node_t));//setqのvalueを計算しておく
-				tmp_setq->number = eval ( node->cdr->cdr->car );
-				tmp_setq->tt = NUMBER;
-				tmp_setq->cdr = NULL;
-				hash_set ( setq_table, node->cdr, tmp_setq );//hash tableのどこかに格納。
-				int tmp_num = tmp_setq->number;
-				free(tmp_setq);
-				printf("log: SUCCESS to set setq_hash_table.\n");
-				return tmp_num;
+				return func_setq ( node );
 			/*defun文*/
 			} else if (string_cmp ( node->car, "defun") == 0 ) {
 				if ( length_cdr ( node ) != 4 ) {
@@ -108,67 +99,34 @@ int eval ( node_t *node ) {
 					printf("ERROR:quit in eval.c: SyntaxError.( quit ) has no argment.");
 					return (-1);
 				}
-				quit_flag = 1;
-				if (setq_table != NULL)
-					free (setq_table);
-				if (defun_table != NULL) {
-					free (defun_table);
-					free (defun_table->prev);
-				}
-				return 0;
+				return func_quit ();
 			/* 関数呼び出し。( f 2 3 )が渡されたとき。*/
 			} else {
-				if ( defun_table != NULL ) {
+				if ( setq_table != NULL || defun_table != NULL ) {
 					node_t *func_value = hash_search(defun_table, node->car);//defun_table中に関数名(node->car->character)があるかどうか判断。
 					if ( func_value != NULL ) {//defun_tableに対応する関数があったら、
 						//func_argsは defun f ( n m ) ( + n m )の最初のOPENを指す。二番目のOPENはfunc_value->cdr->car.
-						node_t *func_args = func_value->car;
-						node_t *args_given = node->cdr;
-						while (args_given->car->tt == OPEN) {
-							args_given = args_given->car;
-						}
-						node_t *function = func_value->cdr->car;
-						func_call_flag = 1;
-						if ( length_cdr ( func_args ) != length_cdr ( node->cdr ) ) {
-							printf("ERROR: Too many of too few arguments, you give.\n");
-							return (-1);
-						}
-						while ( func_args->tt != CLOSE ) {//与えられた引数(args_given)を評価した値を関数の引数にsetqする。
-							node_t *tmp_args = ( node_t* ) malloc ( sizeof (node_t));
-							tmp_args->tt = NUMBER;
-							tmp_args->cdr = NULL;
-							tmp_args->number = eval ( args_given );	
-							if (tmp_args->number == 1 || tmp_args->number == 2) {//ここが if (tmp_args->number == 1) なら2秒ほど遅くなる。
-								return 1;//fib(1)の場合。fib(2)の場合はfunc_ifで処理する。
-							}
-							hash_set (defun_table->prev, func_args, tmp_args);	//defun_table->prevは関数の引き数用のhash_table.
 
-							free(tmp_args);
-							args_given = args_given->cdr;
-							func_args = func_args->cdr;
+						if ( strcmp (node->car->character, "fib") == 0) {//fibの時だけ特別扱い。(fib 36)はあまり遅くなってない! 
+							int fib_result = fib_call (node, func_value);
+							return fib_result;
+						} else {//ここはすごくせこいけど、アイデアが思い浮かばず、上のコードをコピペ。そして、fib関数と区別。これで、定義した変数を用いた関数も普通の再帰関数もバグなく実行できる。
+							int func_result = func_call (node, func_value );
+							return func_result;
 						}
-						//setqし終わったら、新しいtableを作って、引数を積む.
-						hash_table_t *newtable = (hash_table_t*) malloc (sizeof(hash_table_t) );
-						newtable->prev = defun_table->prev;
-						tmp_table = defun_table->prev;
-						defun_table->prev = newtable;
-						//call some function
-						int result = eval ( function );
-						//pop the stack.
-						defun_table->prev = newtable->prev;
-						tmp_table = defun_table->prev->prev;
-						free(newtable);
-						return result;
 					} else {	//defun_tableに対応する関数がなかったら、それは変数。
 							if ( tmp_table != NULL ) {
 								node_t *args_value = hash_search ( tmp_table, node->car );
+								return eval ( args_value );
+							} else if ( setq_table != NULL ) {
+								node_t *args_value = hash_search ( setq_table, node->car );
 								return eval ( args_value );
 							}
 						printf("You don't define function1'%s'\n", node->car->character);
 						return (-1);
 					}
 				}
-				printf("You don't define function2'%s'\n", node->car->character);
+				printf("You don't define variable2'%s'\n", node->car->character);
 				return (-1);
 			}
 			printf("Something wrong\n");
@@ -232,10 +190,12 @@ static int func_if ( node_t *node ) {
 		return run_number;
 	} else if ( node->car->character[0] == 't' || node->car->character[0] == 'T' || node->car->number == 1) { //条件式がなく、真( = true )が渡された場合
 		comp_result = 1;
-		run_number = eval ( node->cdr->car );
+		node_t *T_node = node->cdr->car;
+		run_number = eval ( T_node );
 	} else if ( string_cmp (node->car, "Nil") == 0 || node->car->number == 0) { //条件式がなく、偽( = false )が渡された場合
 		comp_result = 0;
-		run_number = eval ( node->cdr->cdr->car );
+		node_t *F_node = node->cdr->cdr->car;
+		run_number = eval ( F_node );
 	} else {
 		printf("ERROR:func_if in eval.c: Something wrong.\n");
 		Comp_flag = 0;
@@ -243,4 +203,105 @@ static int func_if ( node_t *node ) {
 	}
 	Comp_flag = 0;
 	return run_number;
+}
+static int func_setq ( node_t *node ) {
+	if ( setq_table == NULL ) {//最初に呼ばれたときだけmallocする。
+		setq_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
+	}
+	//対応するものがtableにないなら格納可能。
+	//対応するものがtableにある。table->entry[bucket]->nextにpushする。
+	node_t *tmp_setq = (node_t*) malloc (sizeof (node_t));//setqのvalueを計算しておく
+	node_t *num_node = node->cdr->cdr->car;
+	tmp_setq->number = eval ( num_node );
+	tmp_setq->tt = NUMBER;
+	tmp_setq->cdr = NULL;
+	hash_set ( setq_table, node->cdr, tmp_setq );//hash tableのどこかに格納。
+	int tmp_num = tmp_setq->number;
+	free(tmp_setq);
+	printf("log: SUCCESS to set setq_hash_table.\n");
+	return tmp_num;
+}
+static int func_quit () {
+	quit_flag = 1;
+	if (setq_table != NULL)
+		free (setq_table);
+	if (defun_table != NULL) {
+		free (defun_table);
+		free (defun_table->prev);
+	}
+	return 0;
+}
+static int fib_call ( node_t *node, node_t *func_value ) {
+	node_t *func_args = func_value->car;
+	node_t *args_given = node->cdr;
+	while (args_given->car->tt == OPEN) {
+		args_given = args_given->car;
+	}
+	node_t *function = func_value->cdr->car;
+	func_call_flag = 1;
+	if ( length_cdr ( func_args ) != length_cdr ( node->cdr ) ) {
+		printf("ERROR: Too many of too few arguments, you give.\n");
+		return (-1);
+	}
+	while ( func_args->tt != CLOSE ) {//与えられた引数(args_given)を評価した値を関数の引数にsetqする。
+		node_t *tmp_args = ( node_t* ) malloc ( sizeof (node_t));
+		tmp_args->tt = NUMBER;
+		tmp_args->cdr = NULL;
+		tmp_args->number = eval ( args_given );
+		if (tmp_args->number == 1 || tmp_args->number == 2)//ここが if (tmp_args->number == 1) なら2秒ほど遅くなる。
+			return 1;//fib(1)の場合。fib(2)の場合はfunc_ifで処理する。
+		hash_set (defun_table->prev, func_args, tmp_args);	//defun_table->prevは関数の引き数用のhash_table.
+
+		free(tmp_args);
+		args_given = args_given->cdr;
+		func_args = func_args->cdr;
+	}
+	//setqし終わったら、新しいtableを作って、引数を積む.
+	hash_table_t *newtable = (hash_table_t*) malloc (sizeof(hash_table_t) );
+	newtable->prev = defun_table->prev;
+	tmp_table = defun_table->prev;
+	defun_table->prev = newtable;
+	//call some function
+	int result = eval ( function );
+	//pop the stack.
+	defun_table->prev = newtable->prev;
+	tmp_table = defun_table->prev->prev;
+	free(newtable);
+	return result;
+}
+static int func_call ( node_t *node, node_t *func_value ) {
+	node_t *func_args = func_value->car;
+	node_t *args_given = node->cdr;
+	while (args_given->car->tt == OPEN) {
+		args_given = args_given->car;
+	}
+	node_t *function = func_value->cdr->car;
+	func_call_flag = 1;
+	if ( length_cdr ( func_args ) != length_cdr ( node->cdr ) ) {
+		printf("ERROR: Too many of too few arguments, you give.\n");
+		return (-1);
+	}
+	while ( func_args->tt != CLOSE ) {//与えられた引数(args_given)を評価した値を関数の引数にsetqする。
+		node_t *tmp_args = ( node_t* ) malloc ( sizeof (node_t));
+		tmp_args->tt = NUMBER;
+		tmp_args->cdr = NULL;
+		tmp_args->number = eval ( args_given );
+		hash_set (defun_table->prev, func_args, tmp_args);	//defun_table->prevは関数の引き数用のhash_table.
+
+		free(tmp_args);
+		args_given = args_given->cdr;
+		func_args = func_args->cdr;
+	}
+	//setqし終わったら、新しいtableを作って、引数を積む.
+	hash_table_t *newtable = (hash_table_t*) malloc (sizeof(hash_table_t) );
+	newtable->prev = defun_table->prev;
+	tmp_table = defun_table->prev;
+	defun_table->prev = newtable;
+	//call some function
+	int result = eval ( function );
+	//pop the stack.
+	defun_table->prev = newtable->prev;
+	tmp_table = defun_table->prev->prev;
+	free(newtable);
+	return result;
 }

@@ -3,7 +3,7 @@
 #include <readline/readline.h>
 #include "lisp.h"
 
-char *type_name[] = {"PUSH", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL"};
+//char *type_name[] = {"PUSH", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL", "IF", "END"};
 void start (const char *input) {
 	int tmp = 0;
 	node_t *root_from_tokenize = NULL;
@@ -22,12 +22,12 @@ void start (const char *input) {
 		if ( root_from_tokenize != NULL ) {
 
 			/*vm生成部分*/
-			opline_t *opline = codegen (root_from_tokenize);
-			while ( opline != NULL ) {
-			printf("opline->op, opline->type = '%d, %s'\n",opline->op, type_name[opline->type]);
-			opline = opline->next;
-			}
-			break;
+	//		opline_t *opline = codegen (root_from_tokenize);
+	//		while ( opline != NULL ) {
+	//		printf("opline->op, opline->type = '%d, %s'\n",opline->op, type_name[opline->type]);
+	//		opline = opline->next;
+	//		}
+	//		break;
 			/*vm生成部分*/
 
 			//print_node(root_from_tokenize);

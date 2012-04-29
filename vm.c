@@ -16,9 +16,9 @@ typedef struct opline_t {
 	};
 }opline_t
 */
-//enum op_type type = { PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL};
+//enum op_type type = { PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
 node_t *vm_open = NULL;
-static opline_t* new_vm ();
+static opline_t* func_new ();
 void free_vm ( opline_t *vm ); 
 static opline_t* type_divari ( node_t *node );
 static opline_t* func_smaller ( node_t *node );
@@ -29,6 +29,8 @@ static opline_t* func_add ( node_t *node );
 static opline_t* func_sub ( node_t *node );
 static opline_t* func_mul ( node_t *node );
 static opline_t* func_div ( node_t *node );
+static opline_t* func_if ( node_t *node );
+static opline_t* func_end ();
 
 /*vm生成部分*/
 opline_t *codegen ( node_t *node ) {
@@ -60,14 +62,28 @@ opline_t *codegen ( node_t *node ) {
 			/*if文*/			
 			if ( strcmp (vm_func, "if") == 0) {
 				vm_open = vm_open->cdr;
-				opline_t *condition = type_divari (vm_open);//条件式をPUSHする。
-				//conditionはTかNilで返ってくる。
-				if ( condition->op_T != NULL ) {
-				printf("How are you?\n");
-				} else if ( condition->op_F != NULL ) {
-				printf("I'm fine.\n");
+				/*条件式*/
+				vm_top = type_divari (vm_open);//条件式をvm_topにPUSHする。
+				opline_t *vm_chain = vm_top;
+				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
+					vm_chain = vm_chain->next;
 				}
-				return NULL;
+				/*条件式が真の時の命令*/
+				opline_t *condition = type_divari (vm_root);//conditionはop_Tとop_F(条件式が真の場合と偽の場合に実行される命令)を持っている。
+				vm_chain->next = condition->op_T;
+				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
+					vm_chain = vm_chain->next;
+				}
+				vm_chain->next = func_end ();
+				vm_chain = vm_chain->next;
+				/*条件式が偽の時の命令*/
+				vm_chain->next = condition->op_F;
+				while ( vm_chain->next != NULL ) {//条件式の最後から命令列をつなげてく。
+					vm_chain = vm_chain->next;
+				}
+				vm_chain->next = func_end ();
+				/*if文終わり*/
+				return vm_top;
 			}
 		} else {//今の場合、エラー処理。
 			printf("This is not good....\n");
@@ -79,12 +95,12 @@ opline_t *codegen ( node_t *node ) {
 }
 /*vm生成部分*/
 //opline_tを新しく作る関数。
-static opline_t* new_vm () {
-	opline_t *new_vm = (opline_t*) malloc ( sizeof (opline_t) );
-	new_vm->type = PUSH;
-	new_vm->op = 0;
-	new_vm->next = NULL;
-	return new_vm;
+static opline_t* func_new () {
+	opline_t *func_new = (opline_t*) malloc ( sizeof (opline_t) );
+	func_new->type = PUSH;
+	func_new->op = 0;
+	func_new->next = NULL;
+	return func_new;
 }
 //opline_tをフリーする。
 void free_vm ( opline_t *vm ) {
@@ -97,14 +113,13 @@ opline_t* type_divari ( node_t *node ) {
 		case OPEN:
 			func_result = codegen (node->car);
 			return func_result;
-	//	case CLOSE:
-	//		return func_result; 
 		case NUMBER:
 			func_result = func_push ( node );
 			return func_result;
 		case SYMBOL:
-			if ( string_cmp (node->car, "if") ) {
+			if ( string_cmp (node->car, "if") == 0) {
 				func_result = func_if ( node );
+				printf("func_result='%p, %d, %p, %p'\n",func_result,func_result->type,func_result->op_T,func_result->op_F);
 				return func_result;
 			}
 		case OPERATOR:
@@ -141,68 +156,81 @@ opline_t* type_divari ( node_t *node ) {
 }
 //typeによって処理を変える->PUSH関数。POP関数。ADD関数。
 static opline_t* func_push ( node_t *node ) {
-	opline_t *vm = new_vm ();
+	opline_t *vm = func_new ();
 	vm->type = PUSH;
 	vm->op = node->car->number;
 	vm->next = NULL;
 	return vm;
 }
 static opline_t* func_smaller ( node_t *node ) {
-	opline_t *cmp_result = new_vm ();
-	cmp_result->type = SML;
-	cmp_result->op = 0;
-	cmp_result->next = NULL;
-	return cmp_result;
+	opline_t *sml_vm = func_new ();
+	sml_vm->type = SML;
+	sml_vm->op = 0;
+	sml_vm->next = NULL;
+	return sml_vm;
 	//実行は別にする。
 }
 static opline_t* func_bigger ( node_t *node ) {
-	opline_t *cmp_result = new_vm ();
-	cmp_result->type = BIG;
-	cmp_result->op = 0;
-	cmp_result->next = NULL;
-	return cmp_result;
+	opline_t *big_vm = func_new ();
+	big_vm->type = BIG;
+	big_vm->op = 0;
+	big_vm->next = NULL;
+	return big_vm;
 	//実行は別にする。
 }
 static opline_t* func_equal ( node_t *node ) {
-	opline_t *cmp_result = new_vm ();
-	cmp_result->type = EQL;
-	cmp_result->op = 0;
-	cmp_result->next = NULL;
-	return cmp_result;
+	opline_t *eql_vm = func_new ();
+	eql_vm->type = EQL;
+	eql_vm->op = 0;
+	eql_vm->next = NULL;
+	return eql_vm;
 	//実行は別にする。
 }
 static opline_t* func_add ( node_t *node ) {
-	opline_t *add_result = new_vm ();
-	add_result->type = ADD;
-	add_result->op = 0;
-	add_result->next = NULL;
-	return add_result;
+	opline_t *add_vm = func_new ();
+	add_vm->type = ADD;
+	add_vm->op = 0;
+	add_vm->next = NULL;
+	return add_vm;
 	//実行は別にする。
 }
 static opline_t* func_sub ( node_t *node ) {
-	opline_t *sub_result = new_vm ();
-	sub_result->type = SUB;
-	sub_result->op = 0;
-	sub_result->next = NULL;
-	return sub_result;
+	opline_t *sub_vm = func_new ();
+	sub_vm->type = SUB;
+	sub_vm->op = 0;
+	sub_vm->next = NULL;
+	return sub_vm;
 	//実行は別にする。
 }
 static opline_t* func_mul ( node_t *node ) {
-	opline_t *mul_result = new_vm ();
-	mul_result->type = MUL;
-	mul_result->op = 0;
-	mul_result->next = NULL;
-	return mul_result;
+	opline_t *mul_vm = func_new ();
+	mul_vm->type = MUL;
+	mul_vm->op = 0;
+	mul_vm->next = NULL;
+	return mul_vm;
 	//実行は別にする。
 }
 static opline_t* func_div ( node_t *node ) {
-	opline_t *div_result = new_vm ();
-	div_result->type = DIV;
-	div_result->op = 0;
-	div_result->next = NULL;
-	return div_result;
+	opline_t *div_vm = func_new ();
+	div_vm->type = DIV;
+	div_vm->op = 0;
+	div_vm->next = NULL;
+	return div_vm;
 	//実行は別にする。
 }
 static opline_t* func_if ( node_t *node ) {
-
+	opline_t *if_vm = func_new ();
+	if_vm->type = IF;
+	node_t *T_node = node->cdr->cdr;
+	if_vm->op_T = type_divari (T_node);
+	node_t *F_node = node->cdr->cdr->cdr;
+	if_vm->op_F = type_divari (F_node);
+	return if_vm;
+}
+static opline_t* func_end () {
+	opline_t *end_vm = func_new ();
+	end_vm->type = END;
+	end_vm->op = 0;
+	end_vm->next = NULL;
+	return end_vm;
 }

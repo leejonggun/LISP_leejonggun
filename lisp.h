@@ -26,18 +26,18 @@ typedef struct hash_table_t {
 		    struct hash_table_t *prev;
 }hash_table_t;
 
-enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL};
-typedef struct opline_t {
-	enum op_type type;
-	union {
-		int op;
-		struct opline_t *op_T;
-	};
-	union {
-		struct opline_t *next;
-		struct opline_t *op_F;
-	};
-}opline_t;
+//enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
+//typedef struct opline_t {
+//	enum op_type type;
+//	union {
+//		int op;
+//		struct opline_t *op_T;
+//	};
+//	union {
+//		struct opline_t *next;
+//		struct opline_t *op_F;
+//	};
+//}opline_t;
 
 //共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.
@@ -60,6 +60,7 @@ extern void print_node (node_t *node);
 extern void free_node (node_t *node);
 extern node_t *copy_node (node_t *node);
 extern int eval (node_t *node);
+extern int string_cmp (node_t *node, char *string);
 extern void hash_set (hash_table_t *table, node_t *key, node_t *value);
 extern node_t *hash_search (hash_table_t *table, node_t *node);
 extern int add ( node_t *node );
@@ -69,5 +70,5 @@ extern int dir ( node_t *node );
 extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
-extern opline_t *codegen ( node_t *node ); 
+//extern opline_t *codegen ( node_t *node ); 
 #endif
