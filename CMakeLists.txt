@@ -7,8 +7,8 @@ set(LISP_SRC
 		Calc_and_Comp.c
 		eval.c
 		hash.c
-		vm_run.c
 		vm_codegen.c
+		vm_run.c
 		start.c
 		main.c
    )

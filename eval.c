@@ -17,7 +17,7 @@ static int fib_call ( node_t *node, node_t *func_value );
 static int func_call ( node_t *node, node_t *func_value );
 int string_cmp (node_t *node, char *string) {	//文字列の比較
 	int i;
-	for ( i = 0; i < (strlen (node->character)) ; i++ ) {
+	for ( i = 0; i < (strlen (string)) ; i++ ) {
 		if ( string[i] != node->character[i]) {
 			return 1;
 		}
@@ -47,7 +47,7 @@ int eval ( node_t *node ) {
 				eval_result = dir ( node->cdr );
 			}
 			return eval_result;
-			/*比較演算の選択*/ //to do フラグをつける。計算結果との区別
+			/*比較演算の選択*/ 
 		} else if( node->car->tt == COMP ) {
 			Comp_flag = 1;	
 			if ( node->car->character[0] == '<' ) {
