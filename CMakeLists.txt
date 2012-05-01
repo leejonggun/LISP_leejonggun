@@ -5,10 +5,10 @@ set(LISP_SRC
 		free_node.c
 		copy_node.c
 		Calc_and_Comp.c
-		eval.c
+		eval.c		
 		hash.c
-		vm_codegen.c
 		vm_run.c
+		vm_codegen.c
 		start.c
 		main.c
    )

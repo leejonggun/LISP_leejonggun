@@ -29,6 +29,7 @@ static opline_t* func_sub ( node_t *node );
 static opline_t* func_mul ( node_t *node );
 static opline_t* func_div ( node_t *node );
 static opline_t* func_if ( node_t *node );
+static opline_t* func_defun ( node_t *vm_open );
 static opline_t* func_end ();
 
 /*vm生成部分*/
@@ -73,24 +74,16 @@ opline_t *codegen ( node_t *node ) {
 				/*条件式が真の時の命令*/
 				/*条件式が偽の時の命令*/
 				//上はそれぞれfunc_ifの中で命令列を作る。
-				/*if文終わり*/
 				return vm_top;
 			/*TODO defun文(defun func_name (args) (function))*/
 			} else if (strcmp (vm_func, "defun") == 0) {
-				node_t *func_name = vm_open->cdr;
-				node_t *func = vm_open->cdr->cdr;
-				if (defun_table == NULL) {
-					defun_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
-					defun_table->prev = (hash_table_t*) malloc (sizeof (hash_table_t) );
-				}
-				hash_set (defun_table, func_name, func);
-				printf("log: SUCCESS to set defun_hash_table\n");
-				return NULL; 
-			} else {//今の場合、エラー処理。
+				opline_t *function_top = func_defun (vm_open);
+				return function_top;
+			} else {//関数の呼び出し。今はまだエラー処理
+				//node_t *vm_variable = hash_search ( defun_table, vm_open );
 				printf("You don't define the function.\n");
 				return NULL;
 			}
-
 		} else {//今の場合、エラー処理。
 			printf("This is not good....\n");
 			return NULL;
@@ -123,7 +116,11 @@ static opline_t* type_divari ( node_t *node ) {
 				func_result = func_if ( node );
 				printf("func_result='%p, %d, %p, %p'\n",func_result,func_result->type,func_result->op_T,func_result->op_F);
 				return func_result;
-			}
+			}// else {
+			//	func_result = new_vm ();
+			//	strcpy (func_result->viriable, node->car->character);
+			//	func_result->op = 0;
+			//}
 		case OPERATOR:
 			switch (node->car->character[0]) {
 				case '+':
@@ -251,3 +248,22 @@ static opline_t* func_end () {
 	end_vm->next = NULL;
 	return end_vm;
 }
+static opline_t *func_defun ( node_t *vm_open ) {
+	node_t *func_name = vm_open->cdr;
+	node_t *func_args = vm_open->cdr->cdr;
+	node_t *function = vm_open->cdr->cdr->cdr->car;
+	if (defun_table == NULL) {
+		defun_table = (hash_table_t*) malloc (sizeof (hash_table_t) );
+		defun_table->func_codegen = (opline_t*) malloc (sizeof (opline_t) );
+	}
+	hash_set (defun_table, func_name, func_args);//hash_tableにセット完了。
+	printf("log: SUCCESS to set defun_table->entry[1]->key='%s'\n",defun_table->entry[1]->key);
+	defun_table->func_codegen = codegen ( function );//defun_tableの関数の命令列を作成。
+	return defun_table->func_codegen; 
+}
+//static opline_t *defun_codegen ( node_t *function ) {
+//	/*関数の変数が来た場合。node->car->characterが関数に使われる変数。*/
+//	func_result->type = PUSH;
+//	func_result->next = NULL;
+//	return func_result;
+//}

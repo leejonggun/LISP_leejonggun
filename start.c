@@ -36,7 +36,14 @@ void start (const char *input) {
 			/*vm生成部分*/
 			/*vm実行部分(oplineが命令列のトップ)*/
 			opline_t *run_opline = vm_run (opline);
+			if ( run_opline->type == SML || run_opline->type == BIG || run_opline->type == EQL ) {
+				if ( run_opline->op == 1 )
+					printf("the result after comparing is run_opline->op = 'T'\n");
+				else if (run_opline->op == 0 )
+				printf("the result after comparing is run_opline->op = 'Nil'\n");
+			} else {
 			printf("the result is run_opline->op ='%d'\n",run_opline->op);
+			}
 			/*vm実行部分*/
 			break;
 			//print_node(root_from_tokenize);

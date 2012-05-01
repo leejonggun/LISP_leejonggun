@@ -3,6 +3,12 @@
 
 #define HASH_SIZE 4
 
+#define FLAG      1
+#ifdef FLAG
+
+#else
+
+#endif
 enum token_type {OPEN, CLOSE, NUMBER, SYMBOL, OPERATOR, COMP};
 typedef struct node_t{			//Make tree construction
 	enum token_type tt;			//The type of token
@@ -13,18 +19,6 @@ typedef struct node_t{			//Make tree construction
 	};
 	struct node_t *cdr;			//To List. *cdr in Atom is NULL. Only has List *cdr.
 } node_t;
-
-typedef struct hash_entry_t {
-	    const char *key;
-		    node_t *value;
-			    /* list */
-			struct hash_entry_t *next;
-} hash_entry_t;
-typedef struct hash_table_t {
-	    hash_entry_t* entry[HASH_SIZE];
-		    /* stack */
-		    struct hash_table_t *prev;
-}hash_table_t;
 
 enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
 typedef struct opline_t {
@@ -38,6 +32,21 @@ typedef struct opline_t {
 		struct opline_t *op_F;
 	};
 }opline_t;
+
+typedef struct hash_entry_t {
+	    const char *key;
+		    node_t *value;
+			    /* list */
+			struct hash_entry_t *next;
+} hash_entry_t;
+typedef struct hash_table_t {
+	    hash_entry_t* entry[HASH_SIZE];
+		    /* stack */
+		union {
+		    struct hash_table_t *prev;
+			struct opline_t *func_codegen;
+		};
+}hash_table_t;
 
 //共有する変数定義	共有する変数の宣言はそれぞれ必要なところでする。ここは定義するだけ。
 extern char *sym_data;			//String token.

@@ -100,38 +100,39 @@ int eval ( node_t *node ) {
 					return (-1);
 				}
 				return func_quit ();
-			/* 関数呼び出し。( f 2 3 )が渡されたとき。*/
-			} else {
-				if ( setq_table != NULL || defun_table != NULL ) {
-					node_t *func_value = hash_search(defun_table, node->car);//defun_table中に関数名(node->car->character)があるかどうか判断。
-					if ( func_value != NULL ) {//defun_tableに対応する関数があったら、
-						//func_argsは defun f ( n m ) ( + n m )の最初のOPENを指す。二番目のOPENはfunc_value->cdr->car.
-
-						if ( strcmp (node->car->character, "fib") == 0) {//fibの時だけ特別扱い。(fib 36)はあまり遅くなってない! 
-							int fib_result = fib_call (node, func_value);
-							return fib_result;
-						} else {//ここはすごくせこいけど、アイデアが思い浮かばず、上のコードをコピペ。そして、fib関数と区別。これで、定義した変数を用いた関数も普通の再帰関数もバグなく実行できる。
-							int func_result = func_call (node, func_value );
-							return func_result;
-						}
-					} else {	//defun_tableに対応する関数がなかったら、それは変数。
-							if ( tmp_table != NULL ) {
-								node_t *args_value = hash_search ( tmp_table, node->car );
-								return eval ( args_value );
-							} else if ( setq_table != NULL ) {
-								node_t *args_value = hash_search ( setq_table, node->car );
-								return eval ( args_value );
-							}
-						printf("You don't define function1'%s'\n", node->car->character);
-						return (-1);
-					}
-				}
-				printf("You don't define variable2'%s'\n", node->car->character);
-				return (-1);
+				/*TODO while文、(defun f(n) (defun g(n)))*/
 			}
-			printf("Something wrong\n");
+			/* 関数呼び出し。( f 2 3 )が渡されたとき。*/
+		} else {
+			if ( setq_table != NULL || defun_table != NULL ) {
+				node_t *func_value = hash_search(defun_table, node->car);//defun_table中に関数名(node->car->character)があるかどうか判断。
+				if ( func_value != NULL ) {//defun_tableに対応する関数があったら、
+					//func_argsは defun f ( n m ) ( + n m )の最初のOPENを指す。二番目のOPENはfunc_value->cdr->car.
+
+					if ( strcmp (node->car->character, "fib") == 0) {//fibの時だけ特別扱い。(fib 36)はあまり遅くなってない! 
+						int fib_result = fib_call (node, func_value);
+						return fib_result;
+					} else {//ここはすごくせこいけど、アイデアが思い浮かばず、上のコードをコピペ。そして、fib関数と区別。これで、定義した変数を用いた関数も普通の再帰関数もバグなく実行できる。
+						int func_result = func_call (node, func_value );
+						return func_result;
+					}
+				} else {	//defun_tableに対応する関数がなかったら、それは変数。
+						if ( tmp_table != NULL ) {
+							node_t *args_value = hash_search ( tmp_table, node->car );
+							return eval ( args_value );
+						} else if ( setq_table != NULL ) {
+							node_t *args_value = hash_search ( setq_table, node->car );
+							return eval ( args_value );
+						}
+					printf("You don't define function1'%s'\n", node->car->character);
+					return (-1);
+				}
+			}
+			printf("You don't define variable2'%s'\n", node->car->character);
 			return (-1);
 		}
+		printf("Something wrong\n");
+		return (-1);
 	/*数字なら数字を返す*/
 	} else if (node->tt == NUMBER) {
 		return  node->number;
