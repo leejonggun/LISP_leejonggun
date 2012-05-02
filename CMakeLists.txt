@@ -7,7 +7,6 @@ set(LISP_SRC
 		Calc_and_Comp.c
 		eval.c
 		hash.c
-		vm.c
 		start.c
 		main.c
    )

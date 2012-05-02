@@ -70,4 +70,5 @@ extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
 extern opline_t *codegen ( node_t *node ); 
+extern void hash_free ( hash_table_t *table );
 #endif

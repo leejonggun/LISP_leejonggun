@@ -87,7 +87,7 @@ int eval ( node_t *node ) {
 				hash_set ( setq_table, node->cdr, tmp_setq );//hash tableのどこかに格納。
 				int tmp_num = tmp_setq->number;
 				free(tmp_setq);
-				printf("log: SUCCESS to set setq_hash_table.\n");
+				//printf("log: SUCCESS to set setq_hash_table.\n");
 				return tmp_num;
 			/*defun文*/
 			} else if (string_cmp ( node->car, "defun") == 0 ) {
@@ -100,7 +100,7 @@ int eval ( node_t *node ) {
 					defun_table->prev = (hash_table_t*) malloc (sizeof (hash_table_t) );//関数の引き数用のテーブルを用意しておく。
 				}
 				hash_set ( defun_table, node->cdr, node->cdr->cdr );//hash tableのどこかに格納。
-				printf("log: SUCCESS to set defun_hash_table\n");
+				//printf("log: SUCCESS to set defun_hash_table\n");
 				return 0;
 			/*quit文*/
 			} else if (string_cmp ( node->car, "quit") == 0) {
@@ -138,7 +138,8 @@ int eval ( node_t *node ) {
 							tmp_args->tt = NUMBER;
 							tmp_args->cdr = NULL;
 							tmp_args->number = eval ( args_given );	
-							if (tmp_args->number == 1 || tmp_args->number == 2) {//ここが if (tmp_args->number == 1) なら2秒ほど遅くなる。
+							if (tmp_args->number == 1) {//ここが if (tmp_args->number == 1) なら2秒ほど遅くなる。
+								free(tmp_args);
 								return 1;//fib(1)の場合。fib(2)の場合はfunc_ifで処理する。
 							}
 							hash_set (defun_table->prev, func_args, tmp_args);	//defun_table->prevは関数の引き数用のhash_table.
@@ -157,7 +158,7 @@ int eval ( node_t *node ) {
 						//pop the stack.
 						defun_table->prev = newtable->prev;
 						tmp_table = defun_table->prev->prev;
-						free(newtable);
+						hash_free(newtable);
 						return result;
 					} else {	//defun_tableに対応する関数がなかったら、それは変数。
 							if ( tmp_table != NULL ) {

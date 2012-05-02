@@ -3,7 +3,7 @@
 #include <readline/readline.h>
 #include "lisp.h"
 
-char *type_name[] = {"PUSH", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL"};
+//char *type_name[] = {"PUSH", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL"};
 void start (const char *input) {
 	int tmp = 0;
 	node_t *root_from_tokenize = NULL;
@@ -14,20 +14,20 @@ void start (const char *input) {
 	while (tmp != (strlen(input))) {
 		root_from_tokenize = tokenize(input);
 		tmp = jindex;
-		printf("tokenize finished, tmp = '%d'\n", tmp);
+		//printf("tokenize finished, tmp = '%d'\n", tmp);
 		if ( root_from_tokenize == NULL ) {
-			printf("ERROR in start\n");
+			//printf("ERROR in start\n");
 			break;
 		}
 		if ( root_from_tokenize != NULL ) {
 
 			/*vm生成部分*/
-			opline_t *opline = codegen (root_from_tokenize);
-			while ( opline != NULL ) {
-			printf("opline->op, opline->type = '%d, %s'\n",opline->op, type_name[opline->type]);
-			opline = opline->next;
-			}
-			break;
+		//	opline_t *opline = codegen (root_from_tokenize);
+		//	while ( opline != NULL ) {
+		//	printf("opline->op, opline->type = '%d, %s'\n",opline->op, type_name[opline->type]);
+		//	opline = opline->next;
+		//	}
+		//	break;
 			/*vm生成部分*/
 
 			//print_node(root_from_tokenize);
@@ -36,36 +36,36 @@ void start (const char *input) {
 				if (Comp_flag) {
 					switch (calc_result) {
 						case 0:
-							printf("After eval, Comp_flag is occered. comp_result = Nil.\n");
+							printf("Nil\n");
 							break;
 						case 1:
-							printf("After eval, Comp_flag is occered. comp_result = True.\n");
+							printf("True\n");
 							break;
 						case -1:
-							printf("After eval, Comp_flag is occered. But, Something wrong\n");
+							printf("Something wrong\n");
 							break;
 					}
 				} else {
-				printf("After Function ='%d'\n",calc_result);
+				printf("%d\n",calc_result);
 				}
 			} else if ( Comp_flag ) {
 				switch (calc_result) {
 					case 0:
-						printf("After eval, Comp_flag is occered. comp_result = Nil.\n");
+						printf("Nil\n");
 						break;
 					case 1:
-						printf("After eval, Comp_flag is occered. comp_result = True.\n");
+						printf("True\n");
 						break;
 					case -1:
-						printf("After eval, Comp_flag is occered. But, Something wrong\n");
+						printf("Something wrong\n");
 						break;
 				}
 			} else if ( calc_result == -1 ) {
-				printf("Something wrong in eval.c\n");
+			//	printf("Something wrong in eval.c\n");
 			} else if ( quit_flag ) {
 				break;
 			} else {
-				printf("After eval, calc_result = '%d'\n",calc_result);
+				printf("%d\n",calc_result);
 			}	
 			free_node(root_from_tokenize);
 //			if ( func_call_flag == 1 ) //関数呼び出しの計算が終わったらフリーする。必要なかった。

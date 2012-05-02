@@ -16,11 +16,7 @@ void hash_set(hash_table_t *table, node_t *key, node_t *value) {	//*key is funct
 	hash_entry_t *entry = (hash_entry_t*) malloc (sizeof (hash_entry_t));
 	entry->key = (const char*) malloc (sizeof (strlen (key->car->character))+1);
 	strcpy ((char*)entry->key, key->car->character);	// 関数名を entry の key にコピーする。
-	if ( func_call_flag == 1 ) {
-		entry->value = copy_node ( value/*->car*/ );
-	} else {
-		entry->value = copy_node ( value );	// ( x y ) (+ x y)引数のリストをコピーする。
-	}	
+	entry->value = copy_node ( value );	// ( x y ) (+ x y)引数のリストをコピーする。
 	/*ハッシュ関数にかけて、hast_table(hash_entry[HASH_SIZE])配列の何番目に格納するかを決定する。*/
 	bucket = func_hash ( entry->key );	//table の bucket番目のentryに入れる。
 		table->entry[bucket] = entry;	//stack.
@@ -45,24 +41,18 @@ node_t *hash_search(hash_table_t *table, node_t *node) {	//tableの中のentry�
 	}
 	return NULL;	//対応するものが見つからなかったらNULLを返す
 }
-/*
-defunが呼ばれた時	hash_set( ~ , ~ , ~ );
-関数テーブルに、関数名をkeyに、defun関数の引数全体をvalueとしてセットする
-
-
-defunした関数を呼び出す時
-関数テーブルからvalueを取ってくる	hash_search( ~ , ~ )
-関数の引数用のハッシュテーブルを新たに作って、スタックにプッシュする
-関数名をkeyに、関数テーブルから関数本体を取り出す
-(引数が正しいか確認する)
-	引数用のハッシュテーブルに、値をセットする
-	関数終了時に、引数用のテーブルをfreeし、スタックからポップする
-
-	＊関数のテーブルはスタックにしない(一意)
-	＊引数はスタック上に保存したいので、引数のテーブルはスタックにする(prevのフィールドを利用する)
-関数を呼び出すと引数をsetqする。
-( defun f ( n m ) ( + n m ) )
-( f 2 3 )
-の場合、defunされた関数名が来たら、引数用hash_tableにnを2にsetqする。mを3にsetqする。そのtableはもともとあるsetq_tableとは別のtableを作る。tableのprevにつなげる。
-*/
+void hash_free ( hash_table_t *table ) {
+	hash_entry_t *cur = table->entry[0];
+	hash_entry_t *next = NULL;
+	int i = 0;
+	while ( i < HASH_SIZE ) {
+		if (cur != NULL) {
+			next = cur->next;
+			free (cur->value);
+			free (cur);
+			cur = next;
+		}
+		i++;
+	}
+}
 
