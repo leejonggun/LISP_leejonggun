@@ -39,7 +39,7 @@ void start (const char *input) {
 							printf("Nil\n");
 							break;
 						case 1:
-							printf("True\n");
+							printf("T\n");
 							break;
 						case -1:
 							printf("Something wrong\n");
@@ -54,7 +54,7 @@ void start (const char *input) {
 						printf("Nil\n");
 						break;
 					case 1:
-						printf("True\n");
+						printf("T\n");
 						break;
 					case -1:
 						printf("Something wrong\n");
