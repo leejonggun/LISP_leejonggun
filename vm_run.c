@@ -2,15 +2,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include "lisp.h"
-#define STACK_SIZE 64
 
 int* calculate (int *sp, opline_t *opline);
 char* compare (int *sp, opline_t *opline);
 
-opline_t* vm_run ( opline_t *opline ) {
-	int stack[STACK_SIZE];
-	int *sp = &stack[0];
+int stack[STACK_SIZE];
+//int *sp = &stack[0];
+
+opline_t* vm_run ( opline_t *opline, int *stack) {
 	char *cmp;
+	int *sp = &stack[0];
 	opline_t *result = (opline_t*) malloc (sizeof (opline_t) );//これがないとa label can only be part of a statement and a declaration is not a statementとエラー。
 	while ( opline != NULL ) {
 		switch (opline->type) {
@@ -19,6 +20,11 @@ opline_t* vm_run ( opline_t *opline ) {
 				sp++;
 				break;
 			}
+			case PUSH_V:
+					//sp = stack[opline->op];
+					*sp = stack[opline->op];
+					sp++;
+					break;
 			case ADD:
 			case SUB:
 			case MUL:
@@ -26,8 +32,8 @@ opline_t* vm_run ( opline_t *opline ) {
 				sp = calculate (sp, opline);
 				sp++;
 				result->type = PUSH;
-				result->op = stack[0];
-				result->next = NULL;
+				//result->op = stack[0];
+				//result->next = NULL;
 				break;
 			case SML:
 			case BIG:
@@ -42,9 +48,11 @@ opline_t* vm_run ( opline_t *opline ) {
 				break;
 			case IF:
 				if ( result->op == 1 )
-					result = vm_run ( opline->op_T );
+					//result = vm_run ( opline->op_T, sp);
+					opline = opline->op_T;
 				else if ( result->op == 0 )
-					result = vm_run ( opline->op_F );
+					//result = vm_run ( opline->op_F, sp);
+					opline = opline->op_F;
 				return result;
 			case END: {
 				result->type = PUSH;
@@ -52,6 +60,13 @@ opline_t* vm_run ( opline_t *opline ) {
 				result->next = NULL;
 				return result;
 			}
+			case CALL:
+				result = vm_run(opline->op_T, sp);
+				sp -= opline->op_T->args_num;
+				*sp = result;
+				sp++;
+				break;	
+
 			default:
 				break;
 		}

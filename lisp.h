@@ -2,6 +2,7 @@
 #define LISP_H
 
 #define HASH_SIZE 4
+#define STACK_SIZE 1024
 
 #define FLAG      1
 #ifdef FLAG
@@ -20,11 +21,13 @@ typedef struct node_t{			//Make tree construction
 	struct node_t *cdr;			//To List. *cdr in Atom is NULL. Only has List *cdr.
 } node_t;
 
-enum op_type {PUSH, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END};
+enum op_type {PUSH, PUSH_V, POP, ADD, SUB, MUL, DIV, SML, BIG, EQL, IF, END, CALL};
 typedef struct opline_t {
 	enum op_type type;
+	int args_number;
 	union {
 		int op;
+		char *viriable;
 		struct opline_t *op_T;
 	};
 	union {
@@ -35,20 +38,21 @@ typedef struct opline_t {
 
 typedef struct hash_entry_t {
 	    const char *key;
+		union {
 		    node_t *value;
+			opline_t *vm_code;
+		//	int arg_index;
+		};
 			    /* list */
 			struct hash_entry_t *next;
 } hash_entry_t;
 typedef struct hash_table_t {
 	    hash_entry_t* entry[HASH_SIZE];
 		    /* stack */
-		union {
-		    struct hash_table_t *prev;
-			struct opline_t *func_codegen;
-		};
+	    struct hash_table_t *prev;
 }hash_table_t;
 
-//‹¤—L‚·‚é•Ï”’è‹`	‹¤—L‚·‚é•Ï”‚ÌéŒ¾‚Í‚»‚ê‚¼‚ê•K—v‚È‚Æ‚±‚ë‚Å‚·‚éB‚±‚±‚Í’è‹`‚·‚é‚¾‚¯B
+//å…±æœ‰ã™ã‚‹å¤‰æ•°å®šç¾©	å…±æœ‰ã™ã‚‹å¤‰æ•°ã®å®£è¨€ã¯ãã‚Œãã‚Œå¿…è¦ãªã¨ã“ã‚ã§ã™ã‚‹ã€‚ã“ã“ã¯å®šç¾©ã™ã‚‹ã ã‘ã€‚
 extern char *sym_data;			//String token.
 extern char operater_data;		//operater type.
 extern int num_data;			//number token.
@@ -61,8 +65,10 @@ extern int quit_flag;
 extern hash_table_t *setq_table;//hash_table for setq function.
 extern hash_table_t *defun_table;//hash_table for defun function.
 extern hash_table_t *tmp_table;//hash_table for temprary use.
+extern const char *type_name[];
+extern int stack[STACK_SIZE]; 
 
-//ŠÖ”’è‹`	‹¤—L‚·‚éŠÖ”‚ğ’è‹`‚·‚é‚Æ‚«‚Íextern‚ğ‚Â‚¯‚éB
+//é–¢æ•°å®šç¾©	å…±æœ‰ã™ã‚‹é–¢æ•°ã‚’å®šç¾©ã™ã‚‹ã¨ãã¯externã‚’ã¤ã‘ã‚‹ã€‚
 extern void start (const char *input);
 extern node_t* tokenize (const char* input);				
 extern void print_node (node_t *node);
@@ -80,5 +86,8 @@ extern int smaller ( node_t *node );
 extern int bigger ( node_t *node );
 extern int equal ( node_t *node );
 extern opline_t *codegen ( node_t *node ); 
-extern opline_t *vm_run ( opline_t *opline );
+extern opline_t *vm_run ( opline_t *opline, int *stack);
+extern void hash_set_vm ( hash_table_t *table, node_t *key, opline_t *function);
+extern void hash_set_args (hash_table_t *table, node_t *key, int index);
+extern opline_t *hash_search_vm ( hash_table_t *table, node_t *node );
 #endif

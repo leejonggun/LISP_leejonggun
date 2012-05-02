@@ -3,7 +3,7 @@
 #include <readline/readline.h>
 #include "lisp.h"
 
-char *type_name[] = {"PUSH", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL", "IF", "END"};
+const char *type_name[] = {"PUSH","PUSH_V", "POP", "ADD", "SUB", "MUL", "DIV", "SML", "BIG", "EQL", "IF", "END", "CALL"};
 void start (const char *input) {
 	int tmp = 0;
 	node_t *root_from_tokenize = NULL;
@@ -28,14 +28,21 @@ void start (const char *input) {
 				if (check_opline->type == IF ) {
 					printf("check_opline->op, check_opline->type = '%d, %s' has op_T'%d' and op_F'%d'.\n",check_opline->op, type_name[check_opline->type],check_opline->op_T->op,check_opline->op_F->op);
 					check_opline = check_opline->op_T;//op_Tもop_Fもちゃんとある。op_Tの"END"にop_Fをつないだ。
+				} else if (check_opline->type == CALL ) {
+					printf("check_opline->op_T->op='%d'\n",check_opline->op_T->op);
+					check_opline = check_opline->next;
 				} else {
 					printf("check_opline->op, check_opline->type = '%d, %s'\n",check_opline->op, type_name[check_opline->type]);
 					check_opline = check_opline->next;
 				}
 			}
+			if (opline == NULL)
+				break;
 			/*vm生成部分*/
 			/*vm実行部分(oplineが命令列のトップ)*/
-			opline_t *run_opline = vm_run (opline);
+
+			printf("vm_run start\n");
+			opline_t *run_opline = vm_run (opline, stack);
 			if ( run_opline->type == SML || run_opline->type == BIG || run_opline->type == EQL ) {
 				if ( run_opline->op == 1 )
 					printf("the result after comparing is run_opline->op = 'T'\n");
